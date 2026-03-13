@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>루틴 트래커</title>
+<link rel="manifest" href="./manifest_routine.json">
+<meta name="theme-color" content="#6aaa40">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="루틴">
+<link rel="apple-touch-icon" href="./routine_icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8e0d0;--paper:#fdf9f0;--line:#e8dfd0;
+  --red-line:rgba(220,150,150,0.35);
+  --brown:#5a4a3a;--brown-light:#8a7a6a;--tan:#c8a882;--cream:#f0e8d8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  min-height:100vh;background:var(--bg);
+  background-image:radial-gradient(ellipse at 20% 30%,#d4c9b0 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,#c8bfa8 0%,transparent 50%);
+  font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;
+  padding:30px 16px 60px;display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+.app-header{width:100%;max-width:560px;text-align:center;padding:10px 0 0;}
+.app-title{font-family:'Nanum Pen Script',cursive;font-size:36px;color:var(--brown);}
+.app-date{font-size:12px;color:var(--brown-light);margin-top:2px;}
+
+.card{
+  width:100%;max-width:560px;background:var(--paper);
+  border-radius:4px 14px 14px 4px;
+  box-shadow:-5px 0 0 var(--tan),-10px 0 0 #e0c9a8,3px 3px 16px rgba(0,0,0,.12);
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background-image:repeating-linear-gradient(transparent,transparent 31px,var(--line) 31px,var(--line) 32px);
+  background-position:0 48px;pointer-events:none;z-index:0;
+}
+.card::after{
+  content:'';position:absolute;top:0;bottom:0;left:48px;
+  width:1.5px;background:var(--red-line);z-index:1;pointer-events:none;
+}
+.card-inner{position:relative;z-index:2;padding:16px 20px 20px 64px;}
+.section-title{font-family:'Nanum Pen Script',cursive;font-size:22px;color:var(--brown);margin-bottom:12px;}
+
+/* 루틴 추가 폼 */
+.add-row1{display:flex;gap:8px;align-items:center;margin-bottom:6px;}
+.add-row2{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.routine-input{
+  flex:1;background:transparent;border:none;border-bottom:1.5px solid var(--tan);
+  padding:4px 2px;font-family:'Nanum Pen Script',cursive;font-size:18px;color:var(--brown);outline:none;
+}
+.routine-input::placeholder{color:#c0b0a0;}
+.routine-input:focus{border-bottom-color:var(--brown);}
+.add-btn{background:var(--brown);color:var(--paper);border:none;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.add-btn:hover{background:var(--brown-light);}
+
+/* 카테고리 선택 */
+.cat-select-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.cat-label{font-size:11px;color:var(--brown-light);}
+.cat-chip{
+  padding:2px 10px;border-radius:12px;font-size:11px;cursor:pointer;
+  border:1.5px solid var(--tan);color:var(--brown-light);background:transparent;transition:all .15s;
+}
+.cat-chip.sel{background:var(--brown);color:var(--paper);border-color:var(--brown);}
+.add-cat-chip{
+  padding:2px 8px;border-radius:12px;font-size:11px;cursor:pointer;
+  border:1.5px dashed var(--tan);color:var(--tan);background:transparent;
+}
+
+/* 색상 팔레트 */
+.color-pick{display:flex;gap:5px;align-items:center;}
+.cp-dot{width:17px;height:17px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s;flex-shrink:0;}
+.cp-dot:hover{transform:scale(1.2);}
+.cp-dot.sel{border-color:var(--brown);transform:scale(1.15);}
+
+/* 카테고리 그룹 */
+.cat-group{margin-bottom:14px;}
+.cat-group-header{
+  display:flex;align-items:center;gap:8px;margin-bottom:6px;
+  padding-bottom:4px;border-bottom:1px dashed var(--line);
+}
+.cat-group-name{font-size:12px;font-weight:500;color:var(--brown-light);}
+.edit-cat-btn{background:none;border:none;color:#c0b0a0;cursor:pointer;font-size:11px;padding:0 2px;}
+.edit-cat-btn:hover{color:var(--brown);}
+.cat-name-edit{
+  background:transparent;border:none;border-bottom:1px solid var(--tan);
+  font-size:12px;font-weight:500;color:var(--brown-light);outline:none;width:80px;
+}
+.del-cat-group-btn{background:none;border:none;color:#d0a090;cursor:pointer;font-size:11px;padding:0 2px;margin-left:auto;}
+
+/* 선반 */
+.shelf-section{
+  display:flex;align-items:flex-end;margin-bottom:0;position:relative;
+}
+.shelf-wall{
+  width:12px;flex-shrink:0;height:45px;
+  background:linear-gradient(to right,#b8956a,#d4aa7a);
+  border-radius:3px 0 0 3px;
+  box-shadow:inset -2px 0 4px rgba(0,0,0,0.15);
+  margin-bottom:-8px;
+}
+.shelf-wall.right{
+  width:12px;flex-shrink:0;height:45px;
+  background:linear-gradient(to left,#b8956a,#d4aa7a);
+  border-radius:0 3px 3px 0;
+  margin-bottom:-8px;
+}
+.shelf-middle{flex:1;display:flex;flex-direction:column;}
+.shelf-items{
+  display:flex;align-items:flex-end;
+  padding:0 4px;
+  flex:1;
+}
+.shelf-plant{
+  display:flex;flex-direction:column;align-items:center;
+  flex:1;cursor:pointer;min-width:0;
+}
+.shelf-plant svg{display:block;}
+.shelf-board{
+  height:12px;
+  background:linear-gradient(to bottom,#d4b07a,#c09a60);
+  box-shadow:0 4px 0 #a07840,0 5px 8px rgba(0,0,0,0.18);
+  border-radius:1px;
+}
+.shelf-name-row{
+  display:flex;padding:0 4px;margin-top:5px;margin-bottom:2px;
+}
+.shelf-plant-name{
+  flex:1;font-size:9px;color:var(--brown-light);text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:0 2px;
+}
+
+/* 화분 */
+.plant-wrap{width:52px;flex-shrink:0;display:flex;justify-content:center;align-items:flex-end;}
+.plant-wrap svg{filter:drop-shadow(0 2px 3px rgba(0,0,0,0.1));}
+
+/* 루틴 아이템 */
+.routine-list{display:flex;flex-direction:column;gap:5px;}
+.routine-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 8px;border-radius:6px;
+  background:rgba(200,168,130,0.08);border:1px solid rgba(200,168,130,0.2);
+}
+.routine-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;cursor:pointer;}
+.routine-name-el{flex:1;font-size:13px;color:var(--brown);cursor:pointer;}
+.routine-name-input{
+  flex:1;background:transparent;border:none;border-bottom:1px solid var(--tan);
+  font-size:13px;color:var(--brown);outline:none;
+}
+.streak-badge{font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.streak-badge.hot{color:#e07060;background:rgba(224,112,96,0.1);}
+.streak-badge.cold{color:var(--brown-light);background:rgba(0,0,0,0.04);}
+.item-actions{display:flex;gap:2px;opacity:0;transition:opacity .2s;}
+.routine-item:hover .item-actions{opacity:1;}
+.item-btn{background:none;border:none;color:#c0b0a0;cursor:pointer;font-size:12px;padding:0 2px;}
+.item-btn:hover{color:var(--brown);}
+
+/* 인라인 색상 편집 */
+.inline-palette{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding:4px 8px;background:rgba(200,168,130,0.1);border-radius:6px;}
+
+/* 달력 */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cal-title{font-family:'Nanum Pen Script',cursive;font-size:22px;color:var(--brown);}
+.nav-btn{background:none;border:1px solid var(--tan);border-radius:4px;padding:3px 10px;font-size:13px;color:var(--brown-light);cursor:pointer;}
+.nav-btn:hover{background:var(--cream);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dow{text-align:center;font-size:10px;color:var(--brown-light);padding:4px 0;font-weight:500;}
+.cal-dow:first-child{color:#e07060;}
+.cal-dow:last-child{color:#6090c0;}
+.cal-day{min-height:52px;border-radius:8px;padding:4px;background:rgba(255,255,255,0.5);border:1px solid transparent;cursor:pointer;transition:all .15s;}
+.cal-day:hover{background:rgba(200,168,130,0.15);border-color:var(--tan);}
+.cal-day.empty{background:transparent;cursor:default;border:none;}
+.cal-day.today{border-color:var(--brown)!important;background:rgba(90,74,58,0.06);}
+.cal-day.selected{background:rgba(200,168,130,0.25);border-color:var(--tan);}
+.day-num{font-size:11px;color:var(--brown);font-weight:500;text-align:right;line-height:1;}
+.day-sun .day-num{color:#e07060;}
+.day-sat .day-num{color:#6090c0;}
+.day-dots{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;}
+.day-dot{width:7px;height:7px;border-radius:50%;}
+.day-dot.done{opacity:1;}
+.day-dot.undone{opacity:0.18;}
+
+/* 상세 */
+.detail-date{font-family:'Nanum Pen Script',cursive;font-size:20px;color:var(--brown);margin-bottom:12px;}
+.detail-cat-group{margin-bottom:12px;}
+.detail-cat-label{font-size:11px;font-weight:500;color:var(--brown-light);margin-bottom:6px;padding-bottom:3px;border-bottom:1px dashed var(--line);}
+.detail-list{display:flex;flex-direction:column;gap:8px;}
+.detail-item{display:flex;align-items:flex-start;gap:10px;}
+.check-box{width:20px;height:20px;border:1.5px solid #b0a090;border-radius:4px;cursor:pointer;flex-shrink:0;margin-top:1px;position:relative;transition:all .2s;}
+.check-box.done{border-color:var(--brown);background:var(--brown);}
+.check-box.done::after{content:'✓';position:absolute;top:-2px;left:2px;color:white;font-size:14px;}
+.detail-content{flex:1;}
+.detail-name{font-family:'Nanum Pen Script',cursive;font-size:18px;line-height:1.4;}
+.memo-input{width:100%;margin-top:4px;background:transparent;border:none;border-bottom:1px dashed var(--tan);font-size:12px;color:var(--brown-light);outline:none;padding:2px 0;}
+.memo-input::placeholder{color:#c8b8a0;}
+
+.footer-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:10px;border-top:1px solid var(--line);}
+.foot-btn{background:none;border:1px solid var(--tan);border-radius:4px;padding:4px 12px;font-size:11px;color:var(--brown-light);cursor:pointer;}
+.foot-btn:hover{background:var(--cream);}
+.foot-btn.primary{background:var(--brown);color:var(--paper);border-color:var(--brown);}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">🌿 루틴 트래커</div>
+  <div class="app-date" id="app-date"></div>
+</div>
+
+<div class="card" id="detail-card" style="display:none;">
+  <div class="card-inner">
+    <div class="detail-date" id="detail-date"></div>
+    <div id="detail-content"></div>
+    <div class="footer-btns">
+      <button class="foot-btn" id="save-btn">💾 저장</button>
+      <button class="foot-btn primary" id="load-btn">📂 불러오기</button>
+      <input type="file" id="file-input" accept=".json" class="hidden">
+    </div>
+  </div>
+</div>
+
+<!-- 선반 카드 -->
+<div class="card" id="shelf-card" style="display:none;">
+  <div class="card-inner" style="padding-left:20px;">
+    <div class="section-title">내 식물 선반 🌿</div>
+    <div id="shelf-wrap"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-inner">
+    <div class="cal-header">
+      <div class="cal-title" id="cal-title"></div>
+      <div style="display:flex;gap:4px;">
+        <button class="nav-btn" id="prev-btn">◀</button>
+        <button class="nav-btn" id="next-btn">▶</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-inner">
+    <div class="section-title">루틴 설정</div>
+    <div class="add-row1">
+      <input class="routine-input" id="routine-input" type="text" placeholder="새 루틴을 입력해요..." />
+      <button class="add-btn" id="add-routine-btn">+ 추가</button>
+    </div>
+    <div class="add-row2">
+      <div class="cat-select-row" id="cat-select-row"></div>
+      <div class="color-pick" id="color-pick"></div>
+    </div>
+    <div id="routine-groups"></div>
+  </div>
+</div>
+
+<div style="width:100%;max-width:560px;display:flex;gap:8px;justify-content:flex-end;" id="main-btns">
+  <button class="foot-btn" id="save-btn2">💾 저장</button>
+  <button class="foot-btn primary" id="load-btn2">📂 불러오기</button>
+  <input type="file" id="file-input2" accept=".json" class="hidden">
+</div>
+
+<script>
+(function(){
+  var COLORS=['#e07060','#e0a040','#80b080','#6090c0','#c070c0','#c8a040','#5a9090','#a07060',
+              '#d4607a','#d08060','#e8904a','#50a898'];
+  var categories=[{id:1,name:'아침 루틴'},{id:2,name:'저녁 루틴'}];
+  var routines=[];
+  var logs={};
+  var selectedColor=0;
+  var selectedCatId=1;
+  var viewYear,viewMonth,selectedDate;
+  var idCounter=10;
+  var editingColorRid=null;
+
+  var now=new Date();
+  viewYear=now.getFullYear(); viewMonth=now.getMonth();
+  selectedDate=toKey(now);
+  var wdays=['일','월','화','수','목','금','토'];
+  document.getElementById('app-date').textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일 ('+wdays[now.getDay()]+')';
+
+  // 색상 팔레트
+  function renderColorPick(containerId,currentColor,onSelect){
+    var el=document.getElementById(containerId||'color-pick');
+    var html='';
+    for(var i=0;i<COLORS.length;i++){
+      var isSel=currentColor===undefined?(selectedColor===i):(COLORS[i]===currentColor);
+      html+='<div class="cp-dot'+(isSel?' sel':'')+'" data-ci="'+i+'" style="background:'+COLORS[i]+';"></div>';
+    }
+    el.innerHTML=html;
+    var dots=el.querySelectorAll('.cp-dot');
+    for(var d=0;d<dots.length;d++){
+      dots[d].addEventListener('click',(function(ci){return function(){
+        if(onSelect) onSelect(COLORS[ci]);
+        else{ selectedColor=ci; renderColorPick(); }
+      };})(parseInt(dots[d].getAttribute('data-ci'))));
+    }
+  }
+
+  // 카테고리 선택 칩
+  function renderCatSelectRow(){
+    var el=document.getElementById('cat-select-row');
+    var html='<span class="cat-label">카테고리</span>';
+    for(var i=0;i<categories.length;i++){
+      var c=categories[i];
+      html+='<div class="cat-chip'+(selectedCatId===c.id?' sel':'')+'" data-cid="'+c.id+'">'+escHtml(c.name)+'</div>';
+    }
+    html+='<button class="add-cat-chip" id="add-cat-chip-btn">+ 추가</button>';
+    el.innerHTML=html;
+    var chips=el.querySelectorAll('.cat-chip');
+    for(var d=0;d<chips.length;d++){
+      chips[d].addEventListener('click',function(){
+        selectedCatId=parseInt(this.getAttribute('data-cid'));
+        renderCatSelectRow();
+      });
+    }
+    document.getElementById('add-cat-chip-btn').addEventListener('click',function(){
+      var name=prompt('카테고리 이름을 입력해요');
+      if(!name||!name.trim()) return;
+      categories.push({id:idCounter++,name:name.trim()});
+      selectedCatId=categories[categories.length-1].id;
+      renderCatSelectRow(); renderGroups();
+    });
+  }
+
+  // 루틴 그룹 렌더
+  function renderGroups(){
+    var el=document.getElementById('routine-groups');
+    if(routines.length===0){el.innerHTML='<div style="font-size:12px;color:#c0b0a0;padding:4px 0;">아직 루틴이 없어요 🌿</div>';return;}
+    var html='';
+    for(var ci=0;ci<categories.length;ci++){
+      var cat=categories[ci];
+      var catRoutines=routines.filter(function(r){return r.catId===cat.id;});
+      if(catRoutines.length===0) continue;
+      html+='<div class="cat-group" data-gid="'+cat.id+'">' +
+        '<div class="cat-group-header">' +
+          '<span class="cat-group-name" id="cgn-'+cat.id+'">'+escHtml(cat.name)+'</span>' +
+          '<button class="edit-cat-btn" data-cid="'+cat.id+'" title="카테고리명 수정">✏️</button>' +
+          '<button class="del-cat-group-btn" data-cid="'+cat.id+'" title="카테고리 삭제">✕</button>' +
+        '</div>' +
+        '<div class="routine-list" id="rlist-'+cat.id+'">';
+      for(var ri=0;ri<catRoutines.length;ri++){
+        var r=catRoutines[ri];
+        var streak=calcStreak(r.id);
+        html+=renderRoutineItemHTML(r,streak);
+      }
+      html+='</div></div>';
+    }
+    // 카테고리 없는 루틴
+    var uncatRoutines=routines.filter(function(r){return !categories.find(function(c){return c.id===r.catId;});});
+    if(uncatRoutines.length>0){
+      html+='<div class="cat-group"><div class="cat-group-header"><span class="cat-group-name">기타</span></div><div class="routine-list">';
+      for(var ui=0;ui<uncatRoutines.length;ui++) html+=renderRoutineItemHTML(uncatRoutines[ui],calcStreak(uncatRoutines[ui].id));
+      html+='</div></div>';
+    }
+    el.innerHTML=html;
+    bindGroupEvents();
+  }
+
+  // 루틴 총 달성 점수 계산 (전체 날짜 기준)
+  function calcScore(rid){
+    var score=0;
+    var keys=Object.keys(logs);
+    for(var i=0;i<keys.length;i++){
+      if(logs[keys[i]][rid]&&logs[keys[i]][rid].done) score++;
+    }
+    return score;
+  }
+
+  // 식물 종류 7종 (루틴 추가 순서대로 순환)
+  var PLANT_TYPES = ['default','cactus','monstera','flower','bamboo','pine','succu'];
+
+  function plantTypeSVG(type, score, color){
+    var c = color||'#80b080';
+    var pot = '<path d="M14,72 Q12,88 16,91 L48,91 Q52,88 50,72 Z" fill="'+shadeColor(c,-18)+'"/>' +
+      '<ellipse cx="32" cy="72" rx="18" ry="5" fill="'+c+'"/>' +
+      '<ellipse cx="32" cy="90" rx="16" ry="3.5" fill="'+shadeColor(c,-30)+'"/>';
+    var p = '';
+    if(type==='cactus')      p = _cactus(score);
+    else if(type==='monstera') p = _monstera(score);
+    else if(type==='flower')   p = _flower(score);
+    else if(type==='bamboo')   p = _bamboo(score);
+    else if(type==='pine')     p = _pine(score);
+    else if(type==='succu')    p = _succu(score);
+    else                       p = _default(score);
+    return '<svg width="64" height="94" viewBox="0 0 64 94" xmlns="http://www.w3.org/2000/svg">'+p+pot+'</svg>';
+  }
+
+  // 0: 기본형 (최초 나무)
+  function _default(s){
+    var tr='#9a7050',l1='#6aaa40',l2='#5a9a30',l3='#4a8a20',fl='#f5d060';
+    if(s<7)  return '<circle cx="32" cy="67" r="4" fill="#c8b090" opacity="0.85"/>';
+    if(s<21) return '<line x1="32" y1="70" x2="32" y2="54" stroke="'+l2+'" stroke-width="2.5" stroke-linecap="round"/>'+
+      '<ellipse cx="25" cy="57" rx="8" ry="5.5" fill="'+l1+'" transform="rotate(-30,25,57)"/>'+
+      '<ellipse cx="39" cy="55" rx="8" ry="5.5" fill="'+l1+'" transform="rotate(30,39,55)"/>';
+    if(s<49) return '<line x1="32" y1="70" x2="32" y2="40" stroke="'+tr+'" stroke-width="3.5" stroke-linecap="round"/>'+
+      '<line x1="32" y1="60" x2="19" y2="52" stroke="'+tr+'" stroke-width="2" stroke-linecap="round"/>'+
+      '<line x1="32" y1="53" x2="45" y2="45" stroke="'+tr+'" stroke-width="2" stroke-linecap="round"/>'+
+      '<ellipse cx="18" cy="49" rx="10" ry="7" fill="'+l1+'" transform="rotate(-15,18,49)"/>'+
+      '<ellipse cx="46" cy="43" rx="10" ry="7" fill="'+l1+'" transform="rotate(15,46,43)"/>'+
+      '<ellipse cx="32" cy="35" rx="10" ry="7" fill="'+l2+'"/>';
+    if(s<100) return '<line x1="32" y1="70" x2="32" y2="24" stroke="'+tr+'" stroke-width="5" stroke-linecap="round"/>'+
+      '<line x1="32" y1="57" x2="13" y2="45" stroke="'+tr+'" stroke-width="3" stroke-linecap="round"/>'+
+      '<line x1="32" y1="47" x2="51" y2="37" stroke="'+tr+'" stroke-width="3" stroke-linecap="round"/>'+
+      '<line x1="32" y1="37" x2="15" y2="27" stroke="'+tr+'" stroke-width="2" stroke-linecap="round"/>'+
+      '<ellipse cx="12" cy="42" rx="13" ry="9" fill="'+l1+'" transform="rotate(-15,12,42)"/>'+
+      '<ellipse cx="52" cy="34" rx="13" ry="9" fill="'+l1+'" transform="rotate(15,52,34)"/>'+
+      '<ellipse cx="14" cy="24" rx="11" ry="8" fill="'+l2+'" transform="rotate(-10,14,24)"/>'+
+      '<ellipse cx="32" cy="18" rx="13" ry="9" fill="'+l2+'"/>';
+    return '<line x1="32" y1="70" x2="32" y2="18" stroke="'+tr+'" stroke-width="6" stroke-linecap="round"/>'+
+      '<line x1="32" y1="56" x2="10" y2="42" stroke="'+tr+'" stroke-width="3.5" stroke-linecap="round"/>'+
+      '<line x1="32" y1="45" x2="54" y2="33" stroke="'+tr+'" stroke-width="3.5" stroke-linecap="round"/>'+
+      '<line x1="32" y1="34" x2="12" y2="22" stroke="'+tr+'" stroke-width="2.5" stroke-linecap="round"/>'+
+      '<line x1="32" y1="26" x2="52" y2="16" stroke="'+tr+'" stroke-width="2" stroke-linecap="round"/>'+
+      '<ellipse cx="9" cy="39" rx="14" ry="10" fill="'+l1+'" transform="rotate(-20,9,39)"/>'+
+      '<ellipse cx="55" cy="31" rx="14" ry="10" fill="'+l1+'" transform="rotate(20,55,31)"/>'+
+      '<ellipse cx="11" cy="19" rx="12" ry="9" fill="'+l2+'" transform="rotate(-10,11,19)"/>'+
+      '<ellipse cx="53" cy="14" rx="11" ry="8" fill="'+l2+'" transform="rotate(10,53,14)"/>'+
+      '<ellipse cx="32" cy="11" rx="15" ry="10" fill="'+l3+'"/>'+
+      '<circle cx="22" cy="8" r="3.5" fill="'+fl+'" opacity="0.95"/>'+
+      '<circle cx="42" cy="6" r="3" fill="'+fl+'" opacity="0.95"/>'+
+      '<circle cx="32" cy="4" r="3.5" fill="'+fl+'" opacity="0.95"/>'+
+      '<circle cx="14" cy="14" r="2.5" fill="'+fl+'" opacity="0.85"/>'+
+      '<circle cx="50" cy="19" r="2.5" fill="'+fl+'" opacity="0.85"/>';
+  }
+
+  // 1: 선인장
+  function _cactus(s){
+    var g='#5aaa50',gd='#3a8a30',gs='#80cc60';
+    if(s<7)  return '<ellipse cx="32" cy="67" rx="4" ry="3" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<rect x="28" y="52" width="8" height="16" rx="4" fill="'+g+'"/><ellipse cx="32" cy="52" rx="4" ry="3" fill="'+gs+'"/>';
+    if(s<49) return '<rect x="27" y="40" width="10" height="28" rx="5" fill="'+g+'"/>'+
+      '<rect x="16" y="47" width="9" height="6" rx="3" fill="'+g+'"/>'+
+      '<rect x="39" y="43" width="9" height="6" rx="3" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="40" rx="5" ry="3.5" fill="'+gs+'"/>';
+    if(s<100) return '<rect x="26" y="28" width="12" height="40" rx="6" fill="'+g+'"/>'+
+      '<rect x="13" y="38" width="11" height="8" rx="4" fill="'+g+'"/>'+
+      '<rect x="40" y="33" width="11" height="8" rx="4" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="28" rx="6" ry="4" fill="'+gs+'"/>'+
+      '<circle cx="32" cy="25" r="3.5" fill="#f0a0c0"/>';
+    return '<rect x="25" y="20" width="14" height="48" rx="7" fill="'+g+'"/>'+
+      '<rect x="11" y="31" width="13" height="9" rx="4" fill="'+g+'"/>'+
+      '<rect x="40" y="26" width="13" height="9" rx="4" fill="'+g+'"/>'+
+      '<rect x="14" y="44" width="10" height="7" rx="3" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="20" rx="7" ry="5" fill="'+gs+'"/>'+
+      '<circle cx="24" cy="15" r="4" fill="#f080b0"/>'+
+      '<circle cx="32" cy="13" r="3.5" fill="#ff90c0"/>'+
+      '<circle cx="40" cy="15" r="3.5" fill="#f0a0c0"/>';
+  }
+
+  // 2: 몬스테라
+  function _monstera(s){
+    var g='#40a860',gd='#2a8040',gs='#60c878',tr='#9a7050';
+    if(s<7)  return '<circle cx="32" cy="66" r="4" fill="'+gd+'" opacity="0.6"/>';
+    if(s<21) return '<line x1="32" y1="70" x2="32" y2="54" stroke="'+tr+'" stroke-width="2"/>'+
+      '<ellipse cx="24" cy="57" rx="10" ry="7" fill="'+g+'" transform="rotate(-20,24,57)"/>'+
+      '<ellipse cx="24" cy="57" rx="4" ry="2.5" fill="none" stroke="'+gd+'" stroke-width="1.2" transform="rotate(-20,24,57)"/>';
+    if(s<49) return '<line x1="32" y1="70" x2="32" y2="40" stroke="'+tr+'" stroke-width="2.5"/>'+
+      '<ellipse cx="19" cy="48" rx="13" ry="9" fill="'+g+'" transform="rotate(-25,19,48)"/>'+
+      '<ellipse cx="45" cy="44" rx="12" ry="8" fill="'+g+'" transform="rotate(20,45,44)"/>'+
+      '<ellipse cx="19" cy="48" rx="5" ry="3.5" fill="none" stroke="'+gd+'" stroke-width="1.2" transform="rotate(-25,19,48)"/>'+
+      '<ellipse cx="45" cy="44" rx="5" ry="3" fill="none" stroke="'+gd+'" stroke-width="1.2" transform="rotate(20,45,44)"/>';
+    if(s<100) return '<line x1="32" y1="70" x2="32" y2="28" stroke="'+tr+'" stroke-width="3"/>'+
+      '<ellipse cx="15" cy="42" rx="15" ry="10" fill="'+g+'" transform="rotate(-25,15,42)"/>'+
+      '<ellipse cx="49" cy="37" rx="14" ry="9" fill="'+g+'" transform="rotate(20,49,37)"/>'+
+      '<ellipse cx="22" cy="26" rx="12" ry="8" fill="'+gs+'" transform="rotate(-15,22,26)"/>'+
+      '<ellipse cx="15" cy="42" rx="6" ry="4" fill="none" stroke="'+gd+'" stroke-width="1.5" transform="rotate(-25,15,42)"/>'+
+      '<ellipse cx="49" cy="37" rx="6" ry="3.5" fill="none" stroke="'+gd+'" stroke-width="1.5" transform="rotate(20,49,37)"/>';
+    return '<line x1="32" y1="70" x2="32" y2="20" stroke="'+tr+'" stroke-width="3.5"/>'+
+      '<ellipse cx="12" cy="38" rx="16" ry="11" fill="'+g+'" transform="rotate(-30,12,38)"/>'+
+      '<ellipse cx="52" cy="32" rx="15" ry="10" fill="'+g+'" transform="rotate(25,52,32)"/>'+
+      '<ellipse cx="17" cy="24" rx="14" ry="9" fill="'+gs+'" transform="rotate(-15,17,24)"/>'+
+      '<ellipse cx="46" cy="20" rx="12" ry="8" fill="'+gs+'" transform="rotate(15,46,20)"/>'+
+      '<ellipse cx="12" cy="38" rx="7" ry="4.5" fill="none" stroke="'+gd+'" stroke-width="1.5" transform="rotate(-30,12,38)"/>'+
+      '<ellipse cx="52" cy="32" rx="6.5" ry="4" fill="none" stroke="'+gd+'" stroke-width="1.5" transform="rotate(25,52,32)"/>';
+  }
+
+  // 3: 꽃나무
+  function _flower(s){
+    var g='#5a9a38',gd='#3a7a20',pk='#f06080',pk2='#f8a0b8',yw='#f5d040',tr='#9a7050';
+    if(s<7)  return '<circle cx="32" cy="67" r="3.5" fill="'+gd+'" opacity="0.6"/>';
+    if(s<21) return '<line x1="32" y1="70" x2="32" y2="54" stroke="'+tr+'" stroke-width="2"/>'+
+      '<circle cx="32" cy="50" r="7" fill="'+g+'"/>'+
+      '<circle cx="32" cy="48" r="3.5" fill="'+pk2+'"/>';
+    if(s<49) return '<line x1="32" y1="70" x2="32" y2="42" stroke="'+tr+'" stroke-width="2.5"/>'+
+      '<circle cx="32" cy="36" r="11" fill="'+g+'"/>'+
+      '<circle cx="25" cy="32" r="5.5" fill="'+pk+'"/>'+
+      '<circle cx="36" cy="29" r="5" fill="'+pk2+'"/>'+
+      '<circle cx="32" cy="27" r="4" fill="'+pk+'"/>'+
+      '<circle cx="25" cy="32" r="2.5" fill="'+yw+'"/>'+
+      '<circle cx="36" cy="29" r="2" fill="'+yw+'"/>';
+    if(s<100) return '<line x1="32" y1="70" x2="32" y2="30" stroke="'+tr+'" stroke-width="3"/>'+
+      '<circle cx="32" cy="22" r="16" fill="'+g+'"/>'+
+      '<circle cx="20" cy="17" r="7" fill="'+pk+'"/>'+
+      '<circle cx="32" cy="11" r="7" fill="'+pk2+'"/>'+
+      '<circle cx="44" cy="17" r="6.5" fill="'+pk+'"/>'+
+      '<circle cx="23" cy="26" r="5" fill="'+pk2+'"/>'+
+      '<circle cx="20" cy="17" r="3" fill="'+yw+'"/>'+
+      '<circle cx="32" cy="11" r="3" fill="'+yw+'"/>'+
+      '<circle cx="44" cy="17" r="3" fill="'+yw+'"/>';
+    return '<line x1="32" y1="70" x2="32" y2="24" stroke="'+tr+'" stroke-width="4"/>'+
+      '<circle cx="32" cy="15" r="20" fill="'+g+'"/>'+
+      '<circle cx="16" cy="10" r="8" fill="'+pk+'"/>'+
+      '<circle cx="32" cy="4" r="8" fill="'+pk2+'"/>'+
+      '<circle cx="48" cy="8" r="8" fill="'+pk+'"/>'+
+      '<circle cx="18" cy="22" r="6" fill="'+pk2+'"/>'+
+      '<circle cx="46" cy="22" r="6" fill="'+pk+'"/>'+
+      '<circle cx="16" cy="10" r="3.5" fill="'+yw+'"/>'+
+      '<circle cx="32" cy="4" r="3.5" fill="'+yw+'"/>'+
+      '<circle cx="48" cy="8" r="3.5" fill="'+yw+'"/>'+
+      '<circle cx="18" cy="22" r="2.5" fill="'+yw+'"/>'+
+      '<circle cx="46" cy="22" r="2.5" fill="'+yw+'"/>';
+  }
+
+  // 4: 대나무
+  function _bamboo(s){
+    var g='#70b840',gd='#4a9020',gs='#a0d860';
+    if(s<7)  return '<rect x="29" y="60" width="6" height="8" rx="3" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<rect x="29" y="48" width="6" height="20" rx="3" fill="'+g+'"/>'+
+      '<line x1="29" y1="56" x2="35" y2="56" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<ellipse cx="23" cy="50" rx="7" ry="3" fill="'+gs+'" transform="rotate(-20,23,50)"/>';
+    if(s<49) return '<rect x="28" y="38" width="7" height="30" rx="3.5" fill="'+g+'"/>'+
+      '<line x1="28" y1="46" x2="35" y2="46" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<line x1="28" y1="56" x2="35" y2="56" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<ellipse cx="20" cy="40" rx="8" ry="3" fill="'+gs+'" transform="rotate(-25,20,40)"/>'+
+      '<ellipse cx="43" cy="47" rx="8" ry="3" fill="'+gs+'" transform="rotate(20,43,47)"/>';
+    if(s<100) return '<rect x="27" y="24" width="8" height="44" rx="4" fill="'+g+'"/>'+
+      '<line x1="27" y1="34" x2="35" y2="34" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="27" y1="46" x2="35" y2="46" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="27" y1="58" x2="35" y2="58" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<ellipse cx="17" cy="28" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(-20,17,28)"/>'+
+      '<ellipse cx="46" cy="38" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(20,46,38)"/>'+
+      '<ellipse cx="16" cy="50" rx="9" ry="3" fill="'+gs+'" transform="rotate(-15,16,50)"/>';
+    return '<rect x="26" y="14" width="9" height="54" rx="4.5" fill="'+g+'"/>'+
+      '<line x1="26" y1="24" x2="35" y2="24" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="36" x2="35" y2="36" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="48" x2="35" y2="48" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="60" x2="35" y2="60" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<ellipse cx="15" cy="18" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(-25,15,18)"/>'+
+      '<ellipse cx="48" cy="28" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(20,48,28)"/>'+
+      '<ellipse cx="14" cy="40" rx="10" ry="3" fill="'+gs+'" transform="rotate(-15,14,40)"/>'+
+      '<ellipse cx="48" cy="52" rx="10" ry="3" fill="'+gs+'" transform="rotate(15,48,52)"/>'+
+      '<ellipse cx="16" cy="60" rx="9" ry="3" fill="'+gs+'" transform="rotate(-10,16,60)"/>';
+  }
+
+  // 5: 침엽수
+  function _pine(s){
+    var g='#4a9840',gd='#2a7020',gs='#70c050',tr='#9a7050';
+    if(s<7)  return '<polygon points="32,60 28,68 36,68" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<line x1="32" y1="68" x2="32" y2="58" stroke="'+tr+'" stroke-width="2"/>'+
+      '<polygon points="32,46 22,60 42,60" fill="'+g+'"/>';
+    if(s<49) return '<line x1="32" y1="68" x2="32" y2="50" stroke="'+tr+'" stroke-width="2.5"/>'+
+      '<polygon points="32,36 18,56 46,56" fill="'+g+'"/>'+
+      '<polygon points="32,44 20,60 44,60" fill="'+gs+'" opacity="0.5"/>';
+    if(s<100) return '<line x1="32" y1="68" x2="32" y2="38" stroke="'+tr+'" stroke-width="3"/>'+
+      '<polygon points="32,18 12,48 52,48" fill="'+gd+'"/>'+
+      '<polygon points="32,26 13,52 51,52" fill="'+g+'"/>'+
+      '<polygon points="32,36 15,56 49,56" fill="'+gs+'" opacity="0.6"/>';
+    return '<line x1="32" y1="68" x2="32" y2="30" stroke="'+tr+'" stroke-width="3.5"/>'+
+      '<polygon points="32,10 9,42 55,42" fill="'+gd+'"/>'+
+      '<polygon points="32,18 10,46 54,46" fill="'+g+'"/>'+
+      '<polygon points="32,28 12,54 52,54" fill="'+gs+'" opacity="0.7"/>'+
+      '<circle cx="32" cy="9" r="3.5" fill="#f5e060"/>'+
+      '<circle cx="22" cy="14" r="2.5" fill="#f5e060" opacity="0.8"/>'+
+      '<circle cx="42" cy="14" r="2.5" fill="#f5e060" opacity="0.8"/>';
+  }
+
+  // 6: 다육식물
+  function _succu(s){
+    var g='#80c060',gd='#508040',gs='#b0e080',pk='#f0a0b0';
+    if(s<7)  return '<ellipse cx="32" cy="66" rx="5" ry="4" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<ellipse cx="32" cy="62" rx="7" ry="6" fill="'+g+'"/>'+
+      '<ellipse cx="22" cy="64" rx="6" ry="4.5" fill="'+gs+'" transform="rotate(-30,22,64)"/>'+
+      '<ellipse cx="42" cy="64" rx="6" ry="4.5" fill="'+gs+'" transform="rotate(30,42,64)"/>';
+    if(s<49) return '<ellipse cx="32" cy="60" rx="8" ry="7" fill="'+g+'"/>'+
+      '<ellipse cx="18" cy="62" rx="8" ry="6" fill="'+gs+'" transform="rotate(-40,18,62)"/>'+
+      '<ellipse cx="46" cy="62" rx="8" ry="6" fill="'+gs+'" transform="rotate(40,46,62)"/>'+
+      '<ellipse cx="19" cy="54" rx="7" ry="5" fill="'+gd+'" transform="rotate(-20,19,54)"/>'+
+      '<ellipse cx="45" cy="54" rx="7" ry="5" fill="'+gd+'" transform="rotate(20,45,54)"/>';
+    if(s<100) return '<ellipse cx="32" cy="58" rx="9" ry="8" fill="'+g+'"/>'+
+      '<ellipse cx="15" cy="60" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(-40,15,60)"/>'+
+      '<ellipse cx="49" cy="60" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(40,49,60)"/>'+
+      '<ellipse cx="16" cy="50" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(-20,16,50)"/>'+
+      '<ellipse cx="48" cy="50" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(20,48,50)"/>'+
+      '<ellipse cx="32" cy="48" rx="8" ry="6" fill="'+gs+'"/>'+
+      '<circle cx="32" cy="43" r="4.5" fill="'+pk+'"/>';
+    return '<ellipse cx="32" cy="55" rx="10" ry="9" fill="'+g+'"/>'+
+      '<ellipse cx="13" cy="59" rx="10" ry="7" fill="'+gs+'" transform="rotate(-45,13,59)"/>'+
+      '<ellipse cx="51" cy="59" rx="10" ry="7" fill="'+gs+'" transform="rotate(45,51,59)"/>'+
+      '<ellipse cx="13" cy="47" rx="9" ry="6" fill="'+gd+'" transform="rotate(-20,13,47)"/>'+
+      '<ellipse cx="51" cy="47" rx="9" ry="6" fill="'+gd+'" transform="rotate(20,51,47)"/>'+
+      '<ellipse cx="32" cy="43" rx="9" ry="7" fill="'+gs+'"/>'+
+      '<ellipse cx="20" cy="37" rx="7" ry="5" fill="'+gd+'" transform="rotate(-15,20,37)"/>'+
+      '<ellipse cx="44" cy="37" rx="7" ry="5" fill="'+gd+'" transform="rotate(15,44,37)"/>'+
+      '<circle cx="32" cy="32" r="6" fill="'+pk+'"/>'+
+      '<circle cx="20" cy="36" r="3.5" fill="'+pk+'" opacity="0.8"/>'+
+      '<circle cx="44" cy="36" r="3.5" fill="'+pk+'" opacity="0.8"/>';
+  }
+
+  // 구 plantSVG는 default 타입으로 위임
+  function plantSVG(score, color){ return plantTypeSVG('default', score, color); }
+
+  // 선반 렌더
+  function renderShelf(){
+    var card = document.getElementById('shelf-card');
+    var wrap = document.getElementById('shelf-wrap');
+    if(routines.length===0){ card.style.display='none'; return; }
+    card.style.display='';
+
+    var innerW = wrap.offsetWidth || 460;
+    var wallW = 12;
+    var itemW = 64;
+    var perRow = Math.max(1, Math.floor((innerW - wallW*2) / itemW));
+
+    var rows=[];
+    for(var i=0;i<routines.length;i+=perRow) rows.push(routines.slice(i,i+perRow));
+
+    var html='';
+    for(var ri=0;ri<rows.length;ri++){
+      var row=rows[ri];
+      html+='<div class="shelf-section">';
+      html+='<div class="shelf-wall" id="swall-l-'+ri+'"></div>';
+      html+='<div class="shelf-middle" id="smid-'+ri+'">';
+      html+='<div class="shelf-items">';
+      for(var ci=0;ci<row.length;ci++){
+        var r=row[ci];
+        var score=calcScore(r.id);
+        var typeIdx=routines.indexOf(r)%PLANT_TYPES.length;
+        var ptype=PLANT_TYPES[typeIdx];
+        var stageTxt=score<7?'씨앗':score<21?'새싹':score<49?'성장중':score<100?'무럭무럭':'만개';
+        html+='<div class="shelf-plant" title="'+escHtml(r.name)+' · '+score+'점 · '+stageTxt+'">';
+        html+=plantTypeSVG(ptype,score,r.color);
+        html+='</div>';
+      }
+      html+='</div>';
+      html+='<div class="shelf-board" id="sboard-'+ri+'"></div>';
+      html+='</div>';
+      html+='<div class="shelf-wall right" id="swall-r-'+ri+'"></div>';
+      html+='</div>';
+      html+='<div class="shelf-name-row">';
+      for(var ci=0;ci<row.length;ci++){
+        html+='<div class="shelf-plant-name">'+escHtml(row[ci].name)+'</div>';
+      }
+      html+='</div>';
+    }
+    wrap.innerHTML = html;
+
+    // 렌더 후 벽 높이를 판 하단 기준으로 맞추기
+    setTimeout(function(){
+      for(var ri=0;ri<rows.length;ri++){
+        var mid  = document.getElementById('smid-'+ri);
+        var board= document.getElementById('sboard-'+ri);
+        var wl   = document.getElementById('swall-l-'+ri);
+        var wr   = document.getElementById('swall-r-'+ri);
+        if(!mid||!board||!wl||!wr) continue;
+        var midRect   = mid.getBoundingClientRect();
+        var boardRect = board.getBoundingClientRect();
+        // 판 하단(그림자 포함 +4px) 위치 - 40px 위
+        var wallH = 40;
+        var boardBottom = boardRect.bottom + 4; // 그림자
+        var wallBottom  = midRect.top + wallH;
+        // 벽 bottom이 boardBottom과 같도록 margin-top 조정
+        var diff = boardBottom - wallBottom;
+        wl.style.marginTop = Math.max(0, diff) + 'px';
+        wr.style.marginTop = Math.max(0, diff) + 'px';
+      }
+    }, 0);
+  }
+
+  function shadeColor(hex, pct){
+    var num=parseInt(hex.replace('#',''),16);
+    var r=Math.min(255,Math.max(0,(num>>16)+pct));
+    var g=Math.min(255,Math.max(0,((num>>8)&0xff)+pct));
+    var b=Math.min(255,Math.max(0,(num&0xff)+pct));
+    return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  }
+
+  function renderRoutineItemHTML(r,streak){
+    var score=calcScore(r.id);
+    var stageTxt=score<7?'씨앗🌰':score<21?'새싹🌱':score<49?'성장중🌿':score<100?'무럭무럭🌳':'만개🌳✨';
+    return '<div class="routine-item" data-rid="'+r.id+'">' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div class="routine-name-el" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:6px;">'+
+          '<div class="routine-color-dot" style="background:'+r.color+';" data-rid="'+r.id+'" title="색상 변경"></div>'+
+          escHtml(r.name)+'</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;margin-top:2px;">' +
+          '<span class="streak-badge '+(streak>0?'hot':'cold')+'">'+(streak>0?'🔥 '+streak+'일':'0일')+'</span>' +
+          '<span style="font-size:10px;color:var(--brown-light);">'+score+'점 · '+stageTxt+'</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="item-actions">' +
+        '<button class="item-btn edit-name-btn" data-rid="'+r.id+'" title="이름 수정">✏️</button>' +
+        '<button class="item-btn del-routine-btn" data-rid="'+r.id+'" title="삭제">✕</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function bindGroupEvents(){
+    // 카테고리명 수정
+    document.querySelectorAll('.edit-cat-btn').forEach(function(btn){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var cid=parseInt(this.getAttribute('data-cid'));
+        var span=document.getElementById('cgn-'+cid);
+        var cat=categories.find(function(c){return c.id===cid;});
+        var inp=document.createElement('input');
+        inp.className='cat-name-edit';inp.value=cat.name;
+        span.replaceWith(inp); inp.focus(); inp.select();
+        function save(){cat.name=inp.value.trim()||cat.name;renderGroups();renderCatSelectRow();}
+        inp.addEventListener('blur',save);
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key==='Escape')inp.blur();});
+      });
+    });
+    // 카테고리 삭제
+    document.querySelectorAll('.del-cat-group-btn').forEach(function(btn){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var cid=parseInt(this.getAttribute('data-cid'));
+        if(!confirm('카테고리를 삭제하면 해당 루틴도 모두 삭제돼요. 계속할까요?')) return;
+        routines=routines.filter(function(r){return r.catId!==cid;});
+        categories=categories.filter(function(c){return c.id!==cid;});
+        if(selectedCatId===cid) selectedCatId=categories.length>0?categories[0].id:null;
+        renderGroups();renderCatSelectRow();renderCal();renderDetail();renderShelf();autoSave();
+      });
+    });
+    // 이름 수정
+    document.querySelectorAll('.edit-name-btn').forEach(function(btn){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var rid=parseInt(this.getAttribute('data-rid'));
+        var item=document.querySelector('.routine-item[data-rid="'+rid+'"]');
+        var nameEl=item.querySelector('.routine-name-el');
+        var r=routines.find(function(x){return x.id===rid;});
+        var inp=document.createElement('input');
+        inp.className='routine-name-input';inp.value=r.name;
+        nameEl.replaceWith(inp);inp.focus();inp.select();
+        function save(){r.name=inp.value.trim()||r.name;renderGroups();renderDetail();}
+        inp.addEventListener('blur',save);
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key==='Escape')inp.blur();});
+      });
+    });
+    // 색상 클릭 → 인라인 팔레트
+    document.querySelectorAll('.routine-color-dot').forEach(function(dot){
+      dot.addEventListener('click',function(e){
+        e.stopPropagation();
+        var rid=parseInt(this.getAttribute('data-rid'));
+        if(editingColorRid===rid){editingColorRid=null;renderGroups();return;}
+        editingColorRid=rid;
+        var item=document.querySelector('.routine-item[data-rid="'+rid+'"]');
+        var existing=item.querySelector('.inline-palette');
+        if(existing){existing.remove();editingColorRid=null;return;}
+        var pal=document.createElement('div');pal.className='inline-palette';
+        item.appendChild(pal);
+        var palHtml='';
+        for(var i=0;i<COLORS.length;i++) palHtml+='<div class="cp-dot" data-ci="'+i+'" style="background:'+COLORS[i]+';width:18px;height:18px;"></div>';
+        pal.innerHTML=palHtml;
+        pal.querySelectorAll('.cp-dot').forEach(function(d){
+          d.addEventListener('click',function(e){
+            e.stopPropagation();
+            var r=routines.find(function(x){return x.id===rid;});
+            r.color=COLORS[parseInt(this.getAttribute('data-ci'))];
+            editingColorRid=null;renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+          });
+        });
+      });
+    });
+    // 삭제
+    document.querySelectorAll('.del-routine-btn').forEach(function(btn){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        var rid=parseInt(this.getAttribute('data-rid'));
+        routines=routines.filter(function(r){return r.id!==rid;});
+        renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+      });
+    });
+  }
+
+  // 루틴 추가
+  document.getElementById('add-routine-btn').addEventListener('click',addRoutine);
+  document.getElementById('routine-input').addEventListener('keydown',function(e){if(e.key==='Enter')addRoutine();});
+  function addRoutine(){
+    var inp=document.getElementById('routine-input');
+    var text=inp.value.trim(); if(!text) return;
+    var catId=selectedCatId||( categories.length>0?categories[0].id:null );
+    routines.push({id:idCounter++,name:text,color:COLORS[selectedColor],catId:catId});
+    inp.value='';renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+  }
+
+  // streak
+  function calcStreak(rid){
+    var streak=0;var d=new Date();
+    while(true){var key=toKey(d);var dl=logs[key];if(dl&&dl[rid]&&dl[rid].done){streak++;d.setDate(d.getDate()-1);}else break;}
+    return streak;
+  }
+
+  // 달력
+  function renderCal(){
+    document.getElementById('cal-title').textContent=viewYear+'년 '+(viewMonth+1)+'월';
+    var grid=document.getElementById('cal-grid');
+    var html='';
+    var dow=['일','월','화','수','목','금','토'];
+    for(var d=0;d<7;d++) html+='<div class="cal-dow">'+dow[d]+'</div>';
+    var first=new Date(viewYear,viewMonth,1).getDay();
+    var dim=new Date(viewYear,viewMonth+1,0).getDate();
+    var todayKey=toKey(new Date());
+    for(var i=0;i<first;i++) html+='<div class="cal-day empty"><div class="day-num"></div></div>';
+    for(var day=1;day<=dim;day++){
+      var date=new Date(viewYear,viewMonth,day);
+      var key=toKey(date);var dow2=date.getDay();
+      var cls='cal-day'+(dow2===0?' day-sun':dow2===6?' day-sat':'')+(key===todayKey?' today':'')+(key===selectedDate?' selected':'');
+      var dots='';
+      for(var ri=0;ri<routines.length;ri++){
+        var r=routines[ri];var done=logs[key]&&logs[key][r.id]&&logs[key][r.id].done;
+        dots+='<div class="day-dot '+(done?'done':'undone')+'" style="background:'+r.color+';"></div>';
+      }
+      html+='<div class="'+cls+'" data-key="'+key+'"><div class="day-num">'+day+'</div><div class="day-dots">'+dots+'</div></div>';
+    }
+    grid.innerHTML=html;
+    grid.querySelectorAll('.cal-day:not(.empty)').forEach(function(el){
+      el.addEventListener('click',function(){selectedDate=this.getAttribute('data-key');renderCal();renderDetail();});
+    });
+  }
+
+  // 상세
+  function renderDetail(){
+    var card=document.getElementById('detail-card');
+    var mainBtns=document.getElementById('main-btns');
+    if(routines.length===0){card.style.display='none';mainBtns.style.display='flex';return;}
+    card.style.display='';mainBtns.style.display='none';
+    var d=new Date(selectedDate+'T00:00:00');
+    var wd=['일','월','화','수','목','금','토'];
+    document.getElementById('detail-date').textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+wd[d.getDay()]+') 루틴 체크';
+    if(!logs[selectedDate]) logs[selectedDate]={};
+    var html='';
+    // 카테고리별로 묶어서 표시
+    for(var ci=0;ci<categories.length;ci++){
+      var cat=categories[ci];
+      var catRoutines=routines.filter(function(r){return r.catId===cat.id;});
+      if(catRoutines.length===0) continue;
+      html+='<div class="detail-cat-group"><div class="detail-cat-label">'+escHtml(cat.name)+'</div><div class="detail-list">';
+      for(var ri=0;ri<catRoutines.length;ri++){
+        var r=catRoutines[ri];
+        if(!logs[selectedDate][r.id]) logs[selectedDate][r.id]={done:false,memo:''};
+        var entry=logs[selectedDate][r.id];
+        html+='<div class="detail-item">' +
+          '<div class="check-box'+(entry.done?' done':'')+'" data-rid="'+r.id+'"></div>' +
+          '<div class="detail-content">' +
+            '<div class="detail-name" style="color:'+r.color+'">'+escHtml(r.name)+'</div>' +
+            '<input class="memo-input" type="text" placeholder="메모..." value="'+escHtml(entry.memo||'')+'" data-rid="'+r.id+'" />' +
+          '</div></div>';
+      }
+      html+='</div></div>';
+    }
+    document.getElementById('detail-content').innerHTML=html;
+    document.querySelectorAll('.check-box[data-rid]').forEach(function(el){
+      el.addEventListener('click',function(){
+        var rid=parseInt(this.getAttribute('data-rid'));
+        logs[selectedDate][rid].done=!logs[selectedDate][rid].done;
+        renderRoutineListStreaks();renderCal();renderDetail();renderShelf();autoSave();
+      });
+    });
+    document.querySelectorAll('.memo-input[data-rid]').forEach(function(el){
+      el.addEventListener('input',function(){
+        var rid=parseInt(this.getAttribute('data-rid'));
+        logs[selectedDate][rid].memo=this.value; autoSave();
+      });
+    });
+  }
+
+  function renderRoutineListStreaks(){renderGroups();}
+
+  document.getElementById('prev-btn').addEventListener('click',function(){viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}renderCal();});
+  document.getElementById('next-btn').addEventListener('click',function(){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}renderCal();});
+
+  function autoSave(){
+    try{ localStorage.setItem('routine_data',JSON.stringify({categories:categories,routines:routines,logs:logs,idCounter:idCounter})); }catch(e){}
+  }
+  function autoLoad(){
+    try{
+      var raw=localStorage.getItem('routine_data');
+      if(!raw) return;
+      var data=JSON.parse(raw);
+      if(data.categories) categories=data.categories;
+      if(data.routines) routines=data.routines;
+      if(data.logs) logs=data.logs;
+      if(data.idCounter) idCounter=data.idCounter;
+      if(categories.length>0) selectedCatId=categories[0].id;
+    }catch(e){}
+  }
+
+  function saveData(){
+    var data=JSON.stringify({categories:categories,routines:routines,logs:logs,idCounter:idCounter},null,2);
+    var blob=new Blob([data],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='루틴트래커.json';a.click();
+  }
+  function setupLoad(btnId,inputId){
+    document.getElementById(btnId).addEventListener('click',function(){document.getElementById(inputId).click();});
+    document.getElementById(inputId).addEventListener('change',function(e){
+      var file=e.target.files[0];if(!file) return;
+      var reader=new FileReader();
+      reader.onload=function(ev){
+        try{
+          var data=JSON.parse(ev.target.result);
+          if(data.categories) categories=data.categories;
+          if(data.routines) routines=data.routines;
+          if(data.logs) logs=data.logs;
+          if(data.idCounter) idCounter=data.idCounter;
+          if(categories.length>0) selectedCatId=categories[0].id;
+          renderCatSelectRow();renderGroups();renderCal();renderDetail();
+          alert('불러오기 완료!');
+        }catch(err){alert('파일을 읽을 수 없어요.');}
+      };
+      reader.readAsText(file);e.target.value='';
+    });
+  }
+  document.getElementById('save-btn').addEventListener('click',saveData);
+  document.getElementById('save-btn2').addEventListener('click',saveData);
+  setupLoad('load-btn','file-input');
+  setupLoad('load-btn2','file-input2');
+
+  function toKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function pad(n){return n<10?'0'+n:String(n);}
+  function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  autoLoad();
+  renderColorPick();renderCatSelectRow();renderGroups();renderCal();renderDetail();
+  setTimeout(renderShelf, 50); // 레이아웃 확정 후 선반 너비 계산
+  window.addEventListener('resize', renderShelf);
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw_routine.js');
+  });
+}
+</script>
+</body>
+</html>
