@@ -23,6 +23,7 @@ body{
   background-image:radial-gradient(ellipse at 20% 30%,#d4c9b0 0%,transparent 55%),radial-gradient(ellipse at 80% 70%,#c8bfa8 0%,transparent 50%);
   font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif;
   padding:30px 16px 60px;display:flex;flex-direction:column;align-items:center;gap:20px;
+  position:relative;
 }
 .app-header{width:100%;max-width:560px;text-align:center;padding:10px 0 0;}
 .app-title{font-family:'Nanum Pen Script',cursive;font-size:36px;color:var(--brown);}
@@ -118,6 +119,8 @@ body{
 .shelf-plant{
   display:flex;flex-direction:column;align-items:center;
   flex:1;cursor:pointer;min-width:0;
+  transform:translateY(6px);
+  position:relative;z-index:3;
 }
 .shelf-plant svg{display:block;}
 .shelf-board{
@@ -125,6 +128,7 @@ body{
   background:linear-gradient(to bottom,#d4b07a,#c09a60);
   box-shadow:0 4px 0 #a07840,0 5px 8px rgba(0,0,0,0.18);
   border-radius:1px;
+  position:relative;z-index:1;
 }
 .shelf-name-row{
   display:flex;padding:0 4px;margin-top:5px;margin-bottom:2px;
@@ -135,7 +139,35 @@ body{
   padding:0 2px;
 }
 
-/* 화분 */
+/* 물방울 애니메이션 */
+@keyframes dropFall {
+  0%   { transform: translateY(0) scale(1); opacity: 0.75; }
+  100% { transform: translateY(55px) scale(0.7); opacity: 0; }
+}
+@keyframes ripple {
+  0%   { transform: scale(0.3); opacity: 0.6; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.water-drop {
+  position: absolute;
+  width: 7px; height: 10px;
+  background: rgba(80, 170, 240, 0.65);
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  z-index: 9999;
+  animation: dropFall 0.55s ease-in forwards;
+  pointer-events: none;
+}
+.water-ripple {
+  position: absolute;
+  width: 16px; height: 7px;
+  border: 2px solid rgba(80, 170, 240, 0.55);
+  border-radius: 50%;
+  z-index: 9999;
+  animation: ripple 0.38s ease-out forwards;
+  pointer-events: none;
+}
+
+
 .plant-wrap{width:52px;flex-shrink:0;display:flex;justify-content:center;align-items:flex-end;}
 .plant-wrap svg{filter:drop-shadow(0 2px 3px rgba(0,0,0,0.1));}
 
@@ -213,18 +245,6 @@ body{
   <div class="app-date" id="app-date"></div>
 </div>
 
-<div class="card" id="detail-card" style="display:none;">
-  <div class="card-inner">
-    <div class="detail-date" id="detail-date"></div>
-    <div id="detail-content"></div>
-    <div class="footer-btns">
-      <button class="foot-btn" id="save-btn">💾 저장</button>
-      <button class="foot-btn primary" id="load-btn">📂 불러오기</button>
-      <input type="file" id="file-input" accept=".json" class="hidden">
-    </div>
-  </div>
-</div>
-
 <!-- 선반 카드 -->
 <div class="card" id="shelf-card" style="display:none;">
   <div class="card-inner" style="padding-left:20px;">
@@ -258,6 +278,18 @@ body{
       <div class="color-pick" id="color-pick"></div>
     </div>
     <div id="routine-groups"></div>
+  </div>
+</div>
+
+<div class="card" id="detail-card" style="display:none;">
+  <div class="card-inner">
+    <div class="detail-date" id="detail-date"></div>
+    <div id="detail-content"></div>
+    <div class="footer-btns">
+      <button class="foot-btn" id="save-btn">💾 저장</button>
+      <button class="foot-btn primary" id="load-btn">📂 불러오기</button>
+      <input type="file" id="file-input" accept=".json" class="hidden">
+    </div>
   </div>
 </div>
 
@@ -377,23 +409,30 @@ body{
   // 식물 종류 7종 (루틴 추가 순서대로 순환)
   var PLANT_TYPES = ['default','cactus','monstera','flower','bamboo','pine','succu'];
 
-  function plantTypeSVG(type, score, color){
+  function plantTypeSVG(type, score, color, watered){
     var c = color||'#80b080';
-    var pot = '<path d="M14,72 Q12,88 16,91 L48,91 Q52,88 50,72 Z" fill="'+shadeColor(c,-18)+'"/>' +
-      '<ellipse cx="32" cy="72" rx="18" ry="5" fill="'+c+'"/>' +
+    var soilColor = watered ? '#7a5030' : '#d4b890';
+    var soilDark  = watered ? '#5a3818' : '#b89a70';
+
+    var potBody = '<path d="M14,72 Q12,88 16,91 L48,91 Q52,88 50,72 Z" fill="'+shadeColor(c,-18)+'"/>'+
+      '<ellipse cx="32" cy="72" rx="18" ry="5" fill="'+c+'"/>'+
       '<ellipse cx="32" cy="90" rx="16" ry="3.5" fill="'+shadeColor(c,-30)+'"/>';
+    var soil = '<ellipse cx="32" cy="71" rx="15" ry="4" fill="'+soilColor+'"/>'+
+      '<ellipse cx="32" cy="70" rx="10" ry="2.5" fill="'+soilDark+'" opacity="0.55"/>';
+
     var p = '';
-    if(type==='cactus')      p = _cactus(score);
+    if(type==='cactus')        p = _cactus(score);
     else if(type==='monstera') p = _monstera(score);
     else if(type==='flower')   p = _flower(score);
     else if(type==='bamboo')   p = _bamboo(score);
     else if(type==='pine')     p = _pine(score);
     else if(type==='succu')    p = _succu(score);
     else                       p = _default(score);
-    return '<svg width="64" height="94" viewBox="0 0 64 94" xmlns="http://www.w3.org/2000/svg">'+p+pot+'</svg>';
+
+    // 화분 → 흙 → 식물 순서로 그리기 (식물이 흙 위에)
+    return '<svg width="64" height="94" viewBox="0 0 64 94" xmlns="http://www.w3.org/2000/svg">'+potBody+soil+p+'</svg>';
   }
 
-  // 0: 기본형 (최초 나무)
   function _default(s){
     var tr='#9a7050',l1='#6aaa40',l2='#5a9a30',l3='#4a8a20',fl='#f5d060';
     if(s<7)  return '<circle cx="32" cy="67" r="4" fill="#c8b090" opacity="0.85"/>';
@@ -431,31 +470,30 @@ body{
       '<circle cx="50" cy="19" r="2.5" fill="'+fl+'" opacity="0.85"/>';
   }
 
-  // 1: 선인장
   function _cactus(s){
     var g='#5aaa50',gd='#3a8a30',gs='#80cc60';
     if(s<7)  return '<ellipse cx="32" cy="67" rx="4" ry="3" fill="'+gd+'" opacity="0.7"/>';
-    if(s<21) return '<rect x="28" y="52" width="8" height="16" rx="4" fill="'+g+'"/><ellipse cx="32" cy="52" rx="4" ry="3" fill="'+gs+'"/>';
-    if(s<49) return '<rect x="27" y="40" width="10" height="28" rx="5" fill="'+g+'"/>'+
-      '<rect x="16" y="47" width="9" height="6" rx="3" fill="'+g+'"/>'+
-      '<rect x="39" y="43" width="9" height="6" rx="3" fill="'+g+'"/>'+
-      '<ellipse cx="32" cy="40" rx="5" ry="3.5" fill="'+gs+'"/>';
-    if(s<100) return '<rect x="26" y="28" width="12" height="40" rx="6" fill="'+g+'"/>'+
-      '<rect x="13" y="38" width="11" height="8" rx="4" fill="'+g+'"/>'+
-      '<rect x="40" y="33" width="11" height="8" rx="4" fill="'+g+'"/>'+
-      '<ellipse cx="32" cy="28" rx="6" ry="4" fill="'+gs+'"/>'+
-      '<circle cx="32" cy="25" r="3.5" fill="#f0a0c0"/>';
-    return '<rect x="25" y="20" width="14" height="48" rx="7" fill="'+g+'"/>'+
-      '<rect x="11" y="31" width="13" height="9" rx="4" fill="'+g+'"/>'+
-      '<rect x="40" y="26" width="13" height="9" rx="4" fill="'+g+'"/>'+
-      '<rect x="14" y="44" width="10" height="7" rx="3" fill="'+g+'"/>'+
-      '<ellipse cx="32" cy="20" rx="7" ry="5" fill="'+gs+'"/>'+
-      '<circle cx="24" cy="15" r="4" fill="#f080b0"/>'+
-      '<circle cx="32" cy="13" r="3.5" fill="#ff90c0"/>'+
-      '<circle cx="40" cy="15" r="3.5" fill="#f0a0c0"/>';
+    if(s<21) return '<path d="M28,71 L28,55 Q28,50 32,50 Q36,50 36,55 L36,71 Z" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="50" rx="4" ry="3" fill="'+gs+'"/>';
+    if(s<49) return '<path d="M27,71 L27,43 Q27,38 32,38 Q37,38 37,43 L37,71 Z" fill="'+g+'"/>'+
+      '<path d="M16,57 L16,51 Q16,47 20,47 L27,47 L27,57 Z" fill="'+g+'"/>'+
+      '<path d="M37,53 L37,47 Q37,43 41,43 L48,43 L48,53 Z" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="38" rx="5" ry="3.5" fill="'+gs+'"/>';
+    if(s<100) return '<path d="M26,71 L26,31 Q26,26 32,26 Q38,26 38,31 L38,71 Z" fill="'+g+'"/>'+
+      '<path d="M13,46 L13,39 Q13,35 17,35 L26,35 L26,46 Z" fill="'+g+'"/>'+
+      '<path d="M38,41 L38,35 Q38,31 42,31 L51,31 L51,41 Z" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="26" rx="6" ry="4" fill="'+gs+'"/>'+
+      '<circle cx="32" cy="23" r="3.5" fill="#f0a0c0"/>';
+    return '<path d="M25,71 L25,23 Q25,18 32,18 Q39,18 39,23 L39,71 Z" fill="'+g+'"/>'+
+      '<path d="M11,39 L11,30 Q11,25 15,25 L25,25 L25,39 Z" fill="'+g+'"/>'+
+      '<path d="M39,34 L39,27 Q39,22 43,22 L53,22 L53,34 Z" fill="'+g+'"/>'+
+      '<path d="M14,53 L14,46 Q14,42 18,42 L25,42 L25,53 Z" fill="'+g+'"/>'+
+      '<ellipse cx="32" cy="18" rx="7" ry="5" fill="'+gs+'"/>'+
+      '<circle cx="24" cy="13" r="4" fill="#f080b0"/>'+
+      '<circle cx="32" cy="11" r="3.5" fill="#ff90c0"/>'+
+      '<circle cx="40" cy="13" r="3.5" fill="#f0a0c0"/>';
   }
 
-  // 2: 몬스테라
   function _monstera(s){
     var g='#40a860',gd='#2a8040',gs='#60c878',tr='#9a7050';
     if(s<7)  return '<circle cx="32" cy="66" r="4" fill="'+gd+'" opacity="0.6"/>';
@@ -482,7 +520,6 @@ body{
       '<ellipse cx="52" cy="32" rx="6.5" ry="4" fill="none" stroke="'+gd+'" stroke-width="1.5" transform="rotate(25,52,32)"/>';
   }
 
-  // 3: 꽃나무
   function _flower(s){
     var g='#5a9a38',gd='#3a7a20',pk='#f06080',pk2='#f8a0b8',yw='#f5d040',tr='#9a7050';
     if(s<7)  return '<circle cx="32" cy="67" r="3.5" fill="'+gd+'" opacity="0.6"/>';
@@ -519,51 +556,49 @@ body{
       '<circle cx="46" cy="22" r="2.5" fill="'+yw+'"/>';
   }
 
-  // 4: 대나무
   function _bamboo(s){
     var g='#70b840',gd='#4a9020',gs='#a0d860';
-    if(s<7)  return '<rect x="29" y="60" width="6" height="8" rx="3" fill="'+gd+'" opacity="0.7"/>';
-    if(s<21) return '<rect x="29" y="48" width="6" height="20" rx="3" fill="'+g+'"/>'+
-      '<line x1="29" y1="56" x2="35" y2="56" stroke="'+gd+'" stroke-width="1.2"/>'+
-      '<ellipse cx="23" cy="50" rx="7" ry="3" fill="'+gs+'" transform="rotate(-20,23,50)"/>';
-    if(s<49) return '<rect x="28" y="38" width="7" height="30" rx="3.5" fill="'+g+'"/>'+
-      '<line x1="28" y1="46" x2="35" y2="46" stroke="'+gd+'" stroke-width="1.2"/>'+
-      '<line x1="28" y1="56" x2="35" y2="56" stroke="'+gd+'" stroke-width="1.2"/>'+
-      '<ellipse cx="20" cy="40" rx="8" ry="3" fill="'+gs+'" transform="rotate(-25,20,40)"/>'+
-      '<ellipse cx="43" cy="47" rx="8" ry="3" fill="'+gs+'" transform="rotate(20,43,47)"/>';
-    if(s<100) return '<rect x="27" y="24" width="8" height="44" rx="4" fill="'+g+'"/>'+
-      '<line x1="27" y1="34" x2="35" y2="34" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<line x1="27" y1="46" x2="35" y2="46" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<line x1="27" y1="58" x2="35" y2="58" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<ellipse cx="17" cy="28" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(-20,17,28)"/>'+
-      '<ellipse cx="46" cy="38" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(20,46,38)"/>'+
-      '<ellipse cx="16" cy="50" rx="9" ry="3" fill="'+gs+'" transform="rotate(-15,16,50)"/>';
-    return '<rect x="26" y="14" width="9" height="54" rx="4.5" fill="'+g+'"/>'+
-      '<line x1="26" y1="24" x2="35" y2="24" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<line x1="26" y1="36" x2="35" y2="36" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<line x1="26" y1="48" x2="35" y2="48" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<line x1="26" y1="60" x2="35" y2="60" stroke="'+gd+'" stroke-width="1.5"/>'+
-      '<ellipse cx="15" cy="18" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(-25,15,18)"/>'+
-      '<ellipse cx="48" cy="28" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(20,48,28)"/>'+
-      '<ellipse cx="14" cy="40" rx="10" ry="3" fill="'+gs+'" transform="rotate(-15,14,40)"/>'+
-      '<ellipse cx="48" cy="52" rx="10" ry="3" fill="'+gs+'" transform="rotate(15,48,52)"/>'+
-      '<ellipse cx="16" cy="60" rx="9" ry="3" fill="'+gs+'" transform="rotate(-10,16,60)"/>';
+    if(s<7)  return '<rect x="29" y="62" width="6" height="9" rx="3 3 0 0" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<path d="M29,71 L29,55 Q29,50 32,50 Q35,50 35,55 L35,71 Z" fill="'+g+'"/>'+
+      '<line x1="29" y1="59" x2="35" y2="59" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<ellipse cx="23" cy="52" rx="7" ry="3" fill="'+gs+'" transform="rotate(-20,23,52)"/>';
+    if(s<49) return '<path d="M28,71 L28,43 Q28,39 31.5,39 Q35,39 35,43 L35,71 Z" fill="'+g+'"/>'+
+      '<line x1="28" y1="50" x2="35" y2="50" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<line x1="28" y1="61" x2="35" y2="61" stroke="'+gd+'" stroke-width="1.2"/>'+
+      '<ellipse cx="20" cy="43" rx="8" ry="3" fill="'+gs+'" transform="rotate(-25,20,43)"/>'+
+      '<ellipse cx="43" cy="51" rx="8" ry="3" fill="'+gs+'" transform="rotate(20,43,51)"/>';
+    if(s<100) return '<path d="M27,71 L27,29 Q27,25 31.5,25 Q35,25 35,29 L35,71 Z" fill="'+g+'"/>'+
+      '<line x1="27" y1="38" x2="35" y2="38" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="27" y1="50" x2="35" y2="50" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="27" y1="62" x2="35" y2="62" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<ellipse cx="17" cy="31" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(-20,17,31)"/>'+
+      '<ellipse cx="46" cy="42" rx="10" ry="3.5" fill="'+gs+'" transform="rotate(20,46,42)"/>'+
+      '<ellipse cx="16" cy="54" rx="9" ry="3" fill="'+gs+'" transform="rotate(-15,16,54)"/>';
+    return '<path d="M26,71 L26,19 Q26,15 32,15 Q38,15 38,19 L38,71 Z" fill="'+g+'"/>'+
+      '<line x1="26" y1="28" x2="38" y2="28" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="40" x2="38" y2="40" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="52" x2="38" y2="52" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<line x1="26" y1="63" x2="38" y2="63" stroke="'+gd+'" stroke-width="1.5"/>'+
+      '<ellipse cx="15" cy="21" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(-25,15,21)"/>'+
+      '<ellipse cx="48" cy="32" rx="11" ry="3.5" fill="'+gs+'" transform="rotate(20,48,32)"/>'+
+      '<ellipse cx="14" cy="44" rx="10" ry="3" fill="'+gs+'" transform="rotate(-15,14,44)"/>'+
+      '<ellipse cx="48" cy="55" rx="10" ry="3" fill="'+gs+'" transform="rotate(15,48,55)"/>'+
+      '<ellipse cx="16" cy="63" rx="9" ry="3" fill="'+gs+'" transform="rotate(-10,16,63)"/>';
   }
 
-  // 5: 침엽수
   function _pine(s){
     var g='#4a9840',gd='#2a7020',gs='#70c050',tr='#9a7050';
-    if(s<7)  return '<polygon points="32,60 28,68 36,68" fill="'+gd+'" opacity="0.7"/>';
-    if(s<21) return '<line x1="32" y1="68" x2="32" y2="58" stroke="'+tr+'" stroke-width="2"/>'+
+    if(s<7)  return '<polygon points="32,62 27,71 37,71" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<line x1="32" y1="70" x2="32" y2="58" stroke="'+tr+'" stroke-width="2"/>'+
       '<polygon points="32,46 22,60 42,60" fill="'+g+'"/>';
-    if(s<49) return '<line x1="32" y1="68" x2="32" y2="50" stroke="'+tr+'" stroke-width="2.5"/>'+
-      '<polygon points="32,36 18,56 46,56" fill="'+g+'"/>'+
-      '<polygon points="32,44 20,60 44,60" fill="'+gs+'" opacity="0.5"/>';
-    if(s<100) return '<line x1="32" y1="68" x2="32" y2="38" stroke="'+tr+'" stroke-width="3"/>'+
+    if(s<49) return '<line x1="32" y1="70" x2="32" y2="50" stroke="'+tr+'" stroke-width="2.5"/>'+
+      '<polygon points="32,36 18,54 46,54" fill="'+g+'"/>'+
+      '<polygon points="32,44 20,58 44,58" fill="'+gs+'" opacity="0.5"/>';
+    if(s<100) return '<line x1="32" y1="70" x2="32" y2="38" stroke="'+tr+'" stroke-width="3"/>'+
       '<polygon points="32,18 12,48 52,48" fill="'+gd+'"/>'+
       '<polygon points="32,26 13,52 51,52" fill="'+g+'"/>'+
       '<polygon points="32,36 15,56 49,56" fill="'+gs+'" opacity="0.6"/>';
-    return '<line x1="32" y1="68" x2="32" y2="30" stroke="'+tr+'" stroke-width="3.5"/>'+
+    return '<line x1="32" y1="70" x2="32" y2="30" stroke="'+tr+'" stroke-width="3.5"/>'+
       '<polygon points="32,10 9,42 55,42" fill="'+gd+'"/>'+
       '<polygon points="32,18 10,46 54,46" fill="'+g+'"/>'+
       '<polygon points="32,28 12,54 52,54" fill="'+gs+'" opacity="0.7"/>'+
@@ -572,40 +607,91 @@ body{
       '<circle cx="42" cy="14" r="2.5" fill="#f5e060" opacity="0.8"/>';
   }
 
-  // 6: 다육식물
   function _succu(s){
     var g='#80c060',gd='#508040',gs='#b0e080',pk='#f0a0b0';
-    if(s<7)  return '<ellipse cx="32" cy="66" rx="5" ry="4" fill="'+gd+'" opacity="0.7"/>';
-    if(s<21) return '<ellipse cx="32" cy="62" rx="7" ry="6" fill="'+g+'"/>'+
-      '<ellipse cx="22" cy="64" rx="6" ry="4.5" fill="'+gs+'" transform="rotate(-30,22,64)"/>'+
-      '<ellipse cx="42" cy="64" rx="6" ry="4.5" fill="'+gs+'" transform="rotate(30,42,64)"/>';
-    if(s<49) return '<ellipse cx="32" cy="60" rx="8" ry="7" fill="'+g+'"/>'+
-      '<ellipse cx="18" cy="62" rx="8" ry="6" fill="'+gs+'" transform="rotate(-40,18,62)"/>'+
-      '<ellipse cx="46" cy="62" rx="8" ry="6" fill="'+gs+'" transform="rotate(40,46,62)"/>'+
-      '<ellipse cx="19" cy="54" rx="7" ry="5" fill="'+gd+'" transform="rotate(-20,19,54)"/>'+
-      '<ellipse cx="45" cy="54" rx="7" ry="5" fill="'+gd+'" transform="rotate(20,45,54)"/>';
-    if(s<100) return '<ellipse cx="32" cy="58" rx="9" ry="8" fill="'+g+'"/>'+
-      '<ellipse cx="15" cy="60" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(-40,15,60)"/>'+
-      '<ellipse cx="49" cy="60" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(40,49,60)"/>'+
-      '<ellipse cx="16" cy="50" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(-20,16,50)"/>'+
-      '<ellipse cx="48" cy="50" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(20,48,50)"/>'+
-      '<ellipse cx="32" cy="48" rx="8" ry="6" fill="'+gs+'"/>'+
-      '<circle cx="32" cy="43" r="4.5" fill="'+pk+'"/>';
-    return '<ellipse cx="32" cy="55" rx="10" ry="9" fill="'+g+'"/>'+
-      '<ellipse cx="13" cy="59" rx="10" ry="7" fill="'+gs+'" transform="rotate(-45,13,59)"/>'+
-      '<ellipse cx="51" cy="59" rx="10" ry="7" fill="'+gs+'" transform="rotate(45,51,59)"/>'+
-      '<ellipse cx="13" cy="47" rx="9" ry="6" fill="'+gd+'" transform="rotate(-20,13,47)"/>'+
-      '<ellipse cx="51" cy="47" rx="9" ry="6" fill="'+gd+'" transform="rotate(20,51,47)"/>'+
-      '<ellipse cx="32" cy="43" rx="9" ry="7" fill="'+gs+'"/>'+
-      '<ellipse cx="20" cy="37" rx="7" ry="5" fill="'+gd+'" transform="rotate(-15,20,37)"/>'+
-      '<ellipse cx="44" cy="37" rx="7" ry="5" fill="'+gd+'" transform="rotate(15,44,37)"/>'+
-      '<circle cx="32" cy="32" r="6" fill="'+pk+'"/>'+
-      '<circle cx="20" cy="36" r="3.5" fill="'+pk+'" opacity="0.8"/>'+
-      '<circle cx="44" cy="36" r="3.5" fill="'+pk+'" opacity="0.8"/>';
+    if(s<7)  return '<ellipse cx="32" cy="69" rx="5" ry="4" fill="'+gd+'" opacity="0.7"/>';
+    if(s<21) return '<ellipse cx="32" cy="67" rx="7" ry="5" fill="'+g+'"/>'+
+      '<ellipse cx="22" cy="69" rx="6" ry="4" fill="'+gs+'" transform="rotate(-30,22,69)"/>'+
+      '<ellipse cx="42" cy="69" rx="6" ry="4" fill="'+gs+'" transform="rotate(30,42,69)"/>';
+    if(s<49) return '<ellipse cx="32" cy="65" rx="8" ry="7" fill="'+g+'"/>'+
+      '<ellipse cx="18" cy="68" rx="8" ry="6" fill="'+gs+'" transform="rotate(-40,18,68)"/>'+
+      '<ellipse cx="46" cy="68" rx="8" ry="6" fill="'+gs+'" transform="rotate(40,46,68)"/>'+
+      '<ellipse cx="19" cy="60" rx="7" ry="5" fill="'+gd+'" transform="rotate(-20,19,60)"/>'+
+      '<ellipse cx="45" cy="60" rx="7" ry="5" fill="'+gd+'" transform="rotate(20,45,60)"/>';
+    if(s<100) return '<ellipse cx="32" cy="63" rx="9" ry="8" fill="'+g+'"/>'+
+      '<ellipse cx="15" cy="66" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(-40,15,66)"/>'+
+      '<ellipse cx="49" cy="66" rx="9" ry="6.5" fill="'+gs+'" transform="rotate(40,49,66)"/>'+
+      '<ellipse cx="16" cy="56" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(-20,16,56)"/>'+
+      '<ellipse cx="48" cy="56" rx="8" ry="5.5" fill="'+gd+'" transform="rotate(20,48,56)"/>'+
+      '<ellipse cx="32" cy="53" rx="8" ry="6" fill="'+gs+'"/>'+
+      '<circle cx="32" cy="48" r="4.5" fill="'+pk+'"/>';
+    return '<ellipse cx="32" cy="61" rx="10" ry="9" fill="'+g+'"/>'+
+      '<ellipse cx="13" cy="65" rx="10" ry="7" fill="'+gs+'" transform="rotate(-45,13,65)"/>'+
+      '<ellipse cx="51" cy="65" rx="10" ry="7" fill="'+gs+'" transform="rotate(45,51,65)"/>'+
+      '<ellipse cx="13" cy="53" rx="9" ry="6" fill="'+gd+'" transform="rotate(-20,13,53)"/>'+
+      '<ellipse cx="51" cy="53" rx="9" ry="6" fill="'+gd+'" transform="rotate(20,51,53)"/>'+
+      '<ellipse cx="32" cy="49" rx="9" ry="7" fill="'+gs+'"/>'+
+      '<ellipse cx="20" cy="43" rx="7" ry="5" fill="'+gd+'" transform="rotate(-15,20,43)"/>'+
+      '<ellipse cx="44" cy="43" rx="7" ry="5" fill="'+gd+'" transform="rotate(15,44,43)"/>'+
+      '<circle cx="32" cy="38" r="6" fill="'+pk+'"/>'+
+      '<circle cx="20" cy="42" r="3.5" fill="'+pk+'" opacity="0.8"/>'+
+      '<circle cx="44" cy="42" r="3.5" fill="'+pk+'" opacity="0.8"/>';
   }
 
   // 구 plantSVG는 default 타입으로 위임
   function plantSVG(score, color){ return plantTypeSVG('default', score, color); }
+
+  // 물소리 (Web Audio API)
+  function playWaterSound(){
+    try {
+      var ctx = new (window.AudioContext||window.webkitAudioContext)();
+      // 물방울 톡톡 소리 3방울
+      [0, 0.08, 0.18].forEach(function(t){
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1800, ctx.currentTime+t);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime+t+0.12);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime+t);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t+0.15);
+        osc.start(ctx.currentTime+t);
+        osc.stop(ctx.currentTime+t+0.15);
+      });
+    } catch(e){}
+  }
+
+  // 물방울 애니메이션
+  function playWaterAnim(plantEl){
+    var rect = plantEl.getBoundingClientRect();
+    var scrollY = window.scrollY || window.pageYOffset;
+    var scrollX = window.scrollX || window.pageXOffset;
+    var cx = rect.left + scrollX + rect.width * 0.5;
+    var soilY = rect.top + scrollY + rect.height * (72/94); // 흙 위치
+
+    for(var i=0; i<4; i++){
+      (function(idx){
+        setTimeout(function(){
+          var ox = (Math.random()-0.5) * 14;
+          var drop = document.createElement('div');
+          drop.className = 'water-drop';
+          drop.style.left = (cx + ox - 3.5) + 'px';
+          drop.style.top  = (soilY - 60) + 'px'; // 흙에서 60px 위에서 시작
+          document.body.appendChild(drop);
+          // 0.4s 후(dropFall 끝) 파문 생성
+          setTimeout(function(){
+            var ripple = document.createElement('div');
+            ripple.className = 'water-ripple';
+            ripple.style.left = (cx + ox - 8) + 'px';
+            ripple.style.top  = (soilY - 4) + 'px'; // 흙 위에 파문
+            document.body.appendChild(ripple);
+            setTimeout(function(){ ripple.remove(); }, 400);
+            drop.remove();
+          }, 550);
+        }, idx * 100);
+      })(i);
+    }
+  }
 
   // 선반 렌더
   function renderShelf(){
@@ -635,8 +721,10 @@ body{
         var typeIdx=routines.indexOf(r)%PLANT_TYPES.length;
         var ptype=PLANT_TYPES[typeIdx];
         var stageTxt=score<7?'씨앗':score<21?'새싹':score<49?'성장중':score<100?'무럭무럭':'만개';
-        html+='<div class="shelf-plant" title="'+escHtml(r.name)+' · '+score+'점 · '+stageTxt+'">';
-        html+=plantTypeSVG(ptype,score,r.color);
+        var todayKey=selectedDate||toKey(new Date());
+        var watered=!!(logs[todayKey]&&logs[todayKey][r.id]&&logs[todayKey][r.id].done);
+        html+='<div class="shelf-plant" data-rid="'+r.id+'" title="'+(watered?'✅ 오늘 완료':'💧 눌러서 물주기')+' · '+escHtml(r.name)+'">';
+        html+=plantTypeSVG(ptype,score,r.color,watered);
         html+='</div>';
       }
       html+='</div>';
@@ -651,6 +739,27 @@ body{
       html+='</div>';
     }
     wrap.innerHTML = html;
+
+    // 화분 클릭 → 물주기
+    var plants = wrap.querySelectorAll('.shelf-plant[data-rid]');
+    for(var pi=0;pi<plants.length;pi++){
+      plants[pi].addEventListener('click',(function(el,rid){
+        return function(){
+          var dateKey=selectedDate||toKey(new Date());
+          if(!logs[dateKey]) logs[dateKey]={};
+          var watered=!!(logs[dateKey][rid]&&logs[dateKey][rid].done);
+          if(!watered){
+            if(!logs[dateKey][rid]) logs[dateKey][rid]={done:false,memo:''};
+            logs[dateKey][rid].done=true;
+            playWaterSound();
+            playWaterAnim(el);
+          } else {
+            logs[dateKey][rid].done=false;
+          }
+          renderShelf();renderCal();renderDetail();autoSave();
+        };
+      })(plants[pi], parseInt(plants[pi].getAttribute('data-rid'))));
+    }
 
     // 렌더 후 벽 높이를 판 하단 기준으로 맞추기
     setTimeout(function(){
@@ -824,7 +933,7 @@ body{
     }
     grid.innerHTML=html;
     grid.querySelectorAll('.cal-day:not(.empty)').forEach(function(el){
-      el.addEventListener('click',function(){selectedDate=this.getAttribute('data-key');renderCal();renderDetail();});
+      el.addEventListener('click',function(){selectedDate=this.getAttribute('data-key');renderCal();renderDetail();renderShelf();});
     });
   }
 
