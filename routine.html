@@ -236,6 +236,23 @@ body{
 .foot-btn:hover{background:var(--cream);}
 .foot-btn.primary{background:var(--brown);color:var(--paper);border-color:var(--brown);}
 .hidden{display:none;}
+
+/* 꽃가루 */
+.confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+/* 축하 텍스트 */
+.celebration-msg{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  font-size:28px;font-weight:700;color:#fff;
+  text-shadow:none;
+  filter:drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,1));
+  background:linear-gradient(135deg,#e03030,#e8a000,#20a020,#1060e0);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  z-index:10000;pointer-events:none;
+  transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  white-space:nowrap;
+}
+.celebration-msg.show{transform:translate(-50%,-50%) scale(1);}
 </style>
 </head>
 <body>
@@ -248,7 +265,22 @@ body{
 <!-- 선반 카드 -->
 <div class="card" id="shelf-card" style="display:none;">
   <div class="card-inner" style="padding-left:20px;">
-    <div class="section-title">내 식물 선반 🌿</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="section-title">내 식물 선반 🌿</div>
+      <button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--brown-light);font-size:18px;" title="설정">⚙️</button>
+    </div>
+    <div id="settings-panel" style="display:none;padding:10px 0 4px;border-top:1px solid var(--line);margin-top:4px;">
+      <div style="font-size:11px;color:var(--brown-light);margin-bottom:8px;letter-spacing:1px;">축하 문구</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="celebration-input" type="text" value="와👏👏 성공🩷 축하해요"
+          style="flex:1;background:transparent;border:none;border-bottom:1.5px solid var(--tan);padding:4px 2px;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--brown);outline:none;"
+        />
+        <button onclick="saveCelebrationMsg()"
+          style="padding:4px 12px;background:none;border:1px solid var(--tan);border-radius:4px;font-size:11px;color:var(--brown-light);cursor:pointer;white-space:nowrap;font-family:'Noto Sans KR',sans-serif;">
+          저장
+        </button>
+      </div>
+    </div>
     <div id="shelf-wrap"></div>
   </div>
 </div>
@@ -298,6 +330,8 @@ body{
   <button class="foot-btn primary" id="load-btn2">📂 불러오기</button>
   <input type="file" id="file-input2" accept=".json" class="hidden">
 </div>
+
+
 
 <script>
 (function(){
@@ -753,6 +787,12 @@ body{
             logs[dateKey][rid].done=true;
             playWaterSound();
             playWaterAnim(el);
+            // 물방울 애니 끝나고 (900ms) 축하 효과
+            setTimeout(function(){
+              playApplause();
+              launchConfetti();
+              showCelebration();
+            }, 900);
           } else {
             logs[dateKey][rid].done=false;
           }
@@ -1049,6 +1089,138 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw_routine.js');
   });
 }
+
+// ── 축하 효과 ──
+function playApplause() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // 박수 소리: 노이즈 버스트 여러 개
+    for(var i = 0; i < 8; i++) {
+      (function(delay) {
+        setTimeout(function() {
+          var bufSize = ctx.sampleRate * 0.08;
+          var buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+          var data = buf.getChannelData(0);
+          for(var j = 0; j < bufSize; j++) data[j] = (Math.random() * 2 - 1) * (1 - j/bufSize);
+          var src = ctx.createBufferSource();
+          src.buffer = buf;
+          var gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.4, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          // 필터로 박수 느낌
+          var filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 1200 + Math.random()*800;
+          src.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+          src.start();
+        }, delay);
+      })(i * 120 + Math.random()*40);
+    }
+  } catch(e) {}
+}
+
+function launchConfetti() {
+  var canvas = document.createElement('canvas');
+  canvas.className = 'confetti-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  var ctx2 = canvas.getContext('2d');
+
+  var colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9f43','#a29bfe','#fd79a8','#55efc4'];
+  var pieces = [];
+  var count = 120;
+
+  // 양쪽에서 뿌리기
+  for(var i = 0; i < count; i++) {
+    var fromLeft = i < count/2;
+    pieces.push({
+      x: fromLeft ? -10 : canvas.width + 10,
+      y: Math.random() * canvas.height * 0.6,
+      vx: fromLeft ? (4 + Math.random()*6) : -(4 + Math.random()*6),
+      vy: -3 - Math.random()*5,
+      gravity: 0.15 + Math.random()*0.1,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      size: 7 + Math.random()*7,
+      rot: Math.random()*360,
+      rotV: (Math.random()-0.5)*8,
+      shape: Math.random() < 0.5 ? 'rect' : 'circle',
+      opacity: 1,
+    });
+  }
+
+  var start = null;
+  function draw(ts) {
+    if(!start) start = ts;
+    var elapsed = ts - start;
+    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+    var alive = false;
+    for(var j = 0; j < pieces.length; j++) {
+      var p = pieces[j];
+      p.x += p.vx;
+      p.vy += p.gravity;
+      p.y += p.vy;
+      p.rot += p.rotV;
+      if(elapsed > 1500) p.opacity -= 0.018;
+      if(p.opacity <= 0) continue;
+      alive = true;
+      ctx2.save();
+      ctx2.globalAlpha = Math.max(0, p.opacity);
+      ctx2.translate(p.x, p.y);
+      ctx2.rotate(p.rot * Math.PI/180);
+      ctx2.fillStyle = p.color;
+      if(p.shape === 'rect') {
+        ctx2.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+      } else {
+        ctx2.beginPath();
+        ctx2.arc(0, 0, p.size/2, 0, Math.PI*2);
+        ctx2.fill();
+      }
+      ctx2.restore();
+    }
+    if(alive && elapsed < 4000) {
+      requestAnimationFrame(draw);
+    } else {
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(draw);
+}
+
+// 축하 문구
+var celebrationMsg = localStorage.getItem('celebration-msg') || '와👏👏 성공🩷 축하해요';
+function toggleSettings() {
+  var panel = document.getElementById('settings-panel');
+  if(!panel) return;
+  panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+
+function saveCelebrationMsg() {
+  var input = document.getElementById('celebration-input');
+  if(!input) return;
+  celebrationMsg = input.value || '와👏👏 성공🩷 축하해요';
+  localStorage.setItem('celebration-msg', celebrationMsg);
+  input.style.borderBottomColor = '#6a9a5a';
+  setTimeout(function(){ input.style.borderBottomColor = 'var(--tan)'; }, 1000);
+}
+window.addEventListener('DOMContentLoaded', function(){
+  var input = document.getElementById('celebration-input');
+  if(input) input.value = celebrationMsg;
+});
+
+function showCelebration() {
+  var msg = document.createElement('div');
+  msg.className = 'celebration-msg';
+  msg.textContent = celebrationMsg;
+  document.body.appendChild(msg);
+  setTimeout(function(){ msg.classList.add('show'); }, 50);
+  setTimeout(function(){ msg.classList.remove('show'); }, 2500);
+  setTimeout(function(){ msg.remove(); }, 3000);
+}
+
+
 </script>
 </body>
 </html>
