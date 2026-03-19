@@ -192,6 +192,14 @@ body{
 .item-btn{background:none;border:none;color:#c0b0a0;cursor:pointer;font-size:12px;padding:0 2px;}
 .item-btn:hover{color:var(--brown);}
 
+/* 드래그앤드롭 */
+.routine-item[draggable="true"]{cursor:grab;}
+.routine-item[draggable="true"]:active{cursor:grabbing;}
+.routine-item.drag-over{border-color:var(--brown)!important;background:rgba(90,74,58,0.08)!important;}
+.routine-item.dragging{opacity:0.4;}
+.drag-handle{color:#c0b0a0;cursor:grab;font-size:13px;padding:0 3px;flex-shrink:0;user-select:none;}
+.drag-handle:hover{color:var(--brown);}
+
 /* 인라인 색상 편집 */
 .inline-palette{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding:4px 8px;background:rgba(200,168,130,0.1);border-radius:6px;}
 
@@ -834,7 +842,8 @@ body{
   function renderRoutineItemHTML(r,streak){
     var score=calcScore(r.id);
     var stageTxt=score<7?'씨앗🌰':score<21?'새싹🌱':score<49?'성장중🌿':score<100?'무럭무럭🌳':'만개🌳✨';
-    return '<div class="routine-item" data-rid="'+r.id+'">' +
+    return '<div class="routine-item" draggable="true" data-rid="'+r.id+'" data-catid="'+r.catId+'">' +
+      '<div class="drag-handle" title="드래그로 순서/카테고리 변경">⠿</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div class="routine-name-el" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:6px;">'+
           '<div class="routine-color-dot" style="background:'+r.color+';" data-rid="'+r.id+'" title="색상 변경"></div>'+
@@ -926,6 +935,45 @@ body{
         e.stopPropagation();
         var rid=parseInt(this.getAttribute('data-rid'));
         routines=routines.filter(function(r){return r.id!==rid;});
+        renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+      });
+    });
+
+    // 드래그앤드롭
+    var dragSrcRid=null;
+    document.querySelectorAll('.routine-item[draggable]').forEach(function(item){
+      item.addEventListener('dragstart',function(e){
+        dragSrcRid=parseInt(this.getAttribute('data-rid'));
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+      });
+      item.addEventListener('dragend',function(){
+        this.classList.remove('dragging');
+        document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('drag-over');});
+      });
+      item.addEventListener('dragover',function(e){
+        e.preventDefault();
+        e.dataTransfer.dropEffect='move';
+        document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('drag-over');});
+        this.classList.add('drag-over');
+      });
+      item.addEventListener('dragleave',function(){
+        this.classList.remove('drag-over');
+      });
+      item.addEventListener('drop',function(e){
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        var targetRid=parseInt(this.getAttribute('data-rid'));
+        var targetCatId=parseInt(this.getAttribute('data-catid'));
+        if(dragSrcRid===null||dragSrcRid===targetRid) return;
+        // 카테고리 변경 + 순서 변경
+        var srcIdx=routines.findIndex(function(r){return r.id===dragSrcRid;});
+        var tgtIdx=routines.findIndex(function(r){return r.id===targetRid;});
+        if(srcIdx<0||tgtIdx<0) return;
+        var srcRoutine=routines.splice(srcIdx,1)[0];
+        srcRoutine.catId=targetCatId; // 카테고리도 변경
+        var newTgtIdx=routines.findIndex(function(r){return r.id===targetRid;});
+        routines.splice(newTgtIdx,0,srcRoutine);
         renderGroups();renderCal();renderDetail();renderShelf();autoSave();
       });
     });
@@ -1047,7 +1095,9 @@ body{
   function saveData(){
     var data=JSON.stringify({categories:categories,routines:routines,logs:logs,idCounter:idCounter},null,2);
     var blob=new Blob([data],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='루틴트래커.json';a.click();
+    var now2=new Date();
+    var ts=now2.getFullYear()+pad(now2.getMonth()+1)+pad(now2.getDate())+'_'+pad(now2.getHours())+pad(now2.getMinutes());
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='루틴트래커_'+ts+'.json';a.click();
   }
   function setupLoad(btnId,inputId){
     document.getElementById(btnId).addEventListener('click',function(){document.getElementById(inputId).click();});
