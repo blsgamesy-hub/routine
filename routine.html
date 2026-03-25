@@ -941,6 +941,10 @@ body{
 
     // 드래그앤드롭
     var dragSrcRid=null;
+    function clearDragState(){
+      document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('dragging','drag-over');});
+      dragSrcRid=null;
+    }
     document.querySelectorAll('.routine-item[draggable]').forEach(function(item){
       item.addEventListener('dragstart',function(e){
         dragSrcRid=parseInt(this.getAttribute('data-rid'));
@@ -948,8 +952,7 @@ body{
         e.dataTransfer.effectAllowed='move';
       });
       item.addEventListener('dragend',function(){
-        this.classList.remove('dragging');
-        document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('drag-over');});
+        clearDragState();
       });
       item.addEventListener('dragover',function(e){
         e.preventDefault();
@@ -962,12 +965,14 @@ body{
       });
       item.addEventListener('drop',function(e){
         e.preventDefault();
-        this.classList.remove('drag-over');
         var targetRid=parseInt(this.getAttribute('data-rid'));
         var targetCatId=parseInt(this.getAttribute('data-catid'));
-        if(dragSrcRid===null||dragSrcRid===targetRid) return;
+        var srcRid=dragSrcRid;
+        // renderGroups() 전에 dragging 클래스 제거 (DOM 교체 후 dragend가 누락될 수 있음)
+        clearDragState();
+        if(srcRid===null||srcRid===targetRid) return;
         // 카테고리 변경 + 순서 변경
-        var srcIdx=routines.findIndex(function(r){return r.id===dragSrcRid;});
+        var srcIdx=routines.findIndex(function(r){return r.id===srcRid;});
         var tgtIdx=routines.findIndex(function(r){return r.id===targetRid;});
         if(srcIdx<0||tgtIdx<0) return;
         var srcRoutine=routines.splice(srcIdx,1)[0];
