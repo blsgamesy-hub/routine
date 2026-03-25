@@ -47,7 +47,6 @@ body{
 .card-inner{position:relative;z-index:2;padding:16px 20px 20px 64px;}
 .section-title{font-family:'Nanum Pen Script',cursive;font-size:22px;color:var(--brown);margin-bottom:12px;}
 
-/* 루틴 추가 폼 */
 .add-row1{display:flex;gap:8px;align-items:center;margin-bottom:6px;}
 .add-row2{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
 .routine-input{
@@ -59,7 +58,6 @@ body{
 .add-btn{background:var(--brown);color:var(--paper);border:none;padding:5px 14px;border-radius:4px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .add-btn:hover{background:var(--brown-light);}
 
-/* 카테고리 선택 */
 .cat-select-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
 .cat-label{font-size:11px;color:var(--brown-light);}
 .cat-chip{
@@ -72,13 +70,11 @@ body{
   border:1.5px dashed var(--tan);color:var(--tan);background:transparent;
 }
 
-/* 색상 팔레트 */
 .color-pick{display:flex;gap:5px;align-items:center;}
 .cp-dot{width:17px;height:17px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s;flex-shrink:0;}
 .cp-dot:hover{transform:scale(1.2);}
 .cp-dot.sel{border-color:var(--brown);transform:scale(1.15);}
 
-/* 카테고리 그룹 */
 .cat-group{margin-bottom:14px;}
 .cat-group-header{
   display:flex;align-items:center;gap:8px;margin-bottom:6px;
@@ -93,7 +89,6 @@ body{
 }
 .del-cat-group-btn{background:none;border:none;color:#d0a090;cursor:pointer;font-size:11px;padding:0 2px;margin-left:auto;}
 
-/* 선반 */
 .shelf-section{
   display:flex;align-items:flex-end;margin-bottom:0;position:relative;
 }
@@ -139,7 +134,6 @@ body{
   padding:0 2px;
 }
 
-/* 물방울 애니메이션 */
 @keyframes dropFall {
   0%   { transform: translateY(0) scale(1); opacity: 0.75; }
   100% { transform: translateY(55px) scale(0.7); opacity: 0; }
@@ -167,16 +161,15 @@ body{
   pointer-events: none;
 }
 
-
 .plant-wrap{width:52px;flex-shrink:0;display:flex;justify-content:center;align-items:flex-end;}
 .plant-wrap svg{filter:drop-shadow(0 2px 3px rgba(0,0,0,0.1));}
 
-/* 루틴 아이템 */
 .routine-list{display:flex;flex-direction:column;gap:5px;}
 .routine-item{
   display:flex;align-items:center;gap:8px;
   padding:6px 8px;border-radius:6px;
   background:rgba(200,168,130,0.08);border:1px solid rgba(200,168,130,0.2);
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
 }
 .routine-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;cursor:pointer;}
 .routine-name-el{flex:1;font-size:13px;color:var(--brown);cursor:pointer;}
@@ -192,18 +185,29 @@ body{
 .item-btn{background:none;border:none;color:#c0b0a0;cursor:pointer;font-size:12px;padding:0 2px;}
 .item-btn:hover{color:var(--brown);}
 
-/* 드래그앤드롭 */
+/* ── 드래그앤드롭 ── */
 .routine-item[draggable="true"]{cursor:grab;}
 .routine-item[draggable="true"]:active{cursor:grabbing;}
-.routine-item.drag-over{border-color:var(--brown)!important;background:rgba(90,74,58,0.08)!important;}
-.routine-item.dragging{opacity:0.4;}
+.routine-item.drag-over{
+  border-color:var(--brown)!important;
+  background:rgba(90,74,58,0.08)!important;
+  box-shadow: 0 0 0 2px var(--tan);
+}
+.routine-item.dragging{
+  opacity:0.35;
+  cursor:grabbing;
+}
 .drag-handle{color:#c0b0a0;cursor:grab;font-size:13px;padding:0 3px;flex-shrink:0;user-select:none;}
+.drag-handle:active{cursor:grabbing;}
 .drag-handle:hover{color:var(--brown);}
 
-/* 인라인 색상 편집 */
+/* 드롭 존 표시 */
+.routine-list.drag-active .routine-item:not(.dragging){
+  outline: 1px dashed rgba(200,168,130,0.4);
+}
+
 .inline-palette{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding:4px 8px;background:rgba(200,168,130,0.1);border-radius:6px;}
 
-/* 달력 */
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cal-title{font-family:'Nanum Pen Script',cursive;font-size:22px;color:var(--brown);}
 .nav-btn{background:none;border:1px solid var(--tan);border-radius:4px;padding:3px 10px;font-size:13px;color:var(--brown-light);cursor:pointer;}
@@ -225,7 +229,6 @@ body{
 .day-dot.done{opacity:1;}
 .day-dot.undone{opacity:0.18;}
 
-/* 상세 */
 .detail-date{font-family:'Nanum Pen Script',cursive;font-size:20px;color:var(--brown);margin-bottom:12px;}
 .detail-cat-group{margin-bottom:12px;}
 .detail-cat-label{font-size:11px;font-weight:500;color:var(--brown-light);margin-bottom:6px;padding-bottom:3px;border-bottom:1px dashed var(--line);}
@@ -245,13 +248,10 @@ body{
 .foot-btn.primary{background:var(--brown);color:var(--paper);border-color:var(--brown);}
 .hidden{display:none;}
 
-/* 꽃가루 */
 .confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
-/* 축하 텍스트 */
 .celebration-msg{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
   font-size:28px;font-weight:700;color:#fff;
-  text-shadow:none;
   filter:drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,1)) drop-shadow(0 0 6px rgba(255,255,255,1));
   background:linear-gradient(135deg,#e03030,#e8a000,#20a020,#1060e0);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
@@ -270,7 +270,6 @@ body{
   <div class="app-date" id="app-date"></div>
 </div>
 
-<!-- 선반 카드 -->
 <div class="card" id="shelf-card" style="display:none;">
   <div class="card-inner" style="padding-left:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -339,8 +338,6 @@ body{
   <input type="file" id="file-input2" accept=".json" class="hidden">
 </div>
 
-
-
 <script>
 (function(){
   var COLORS=['#e07060','#e0a040','#80b080','#6090c0','#c070c0','#c8a040','#5a9090','#a07060',
@@ -354,13 +351,28 @@ body{
   var idCounter=10;
   var editingColorRid=null;
 
+  // ★ 드래그 상태를 IIFE 스코프 최상단에 선언 (bindGroupEvents 안에 있으면 매번 리셋됨)
+  var dragSrcRid = null;
+  var isDragging = false;
+
   var now=new Date();
   viewYear=now.getFullYear(); viewMonth=now.getMonth();
   selectedDate=toKey(now);
   var wdays=['일','월','화','수','목','금','토'];
   document.getElementById('app-date').textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일 ('+wdays[now.getDay()]+')';
 
-  // 색상 팔레트
+  // ★ 글로벌 dragend 핸들러: DOM 재생성 후에도 dragging 클래스 잔류 방지
+  document.addEventListener('dragend', function(){
+    isDragging = false;
+    dragSrcRid = null;
+    document.querySelectorAll('.routine-item.dragging, .routine-item.drag-over').forEach(function(el){
+      el.classList.remove('dragging','drag-over');
+    });
+    document.querySelectorAll('.routine-list.drag-active').forEach(function(el){
+      el.classList.remove('drag-active');
+    });
+  });
+
   function renderColorPick(containerId,currentColor,onSelect){
     var el=document.getElementById(containerId||'color-pick');
     var html='';
@@ -378,7 +390,6 @@ body{
     }
   }
 
-  // 카테고리 선택 칩
   function renderCatSelectRow(){
     var el=document.getElementById('cat-select-row');
     var html='<span class="cat-label">카테고리</span>';
@@ -404,7 +415,6 @@ body{
     });
   }
 
-  // 루틴 그룹 렌더
   function renderGroups(){
     var el=document.getElementById('routine-groups');
     if(routines.length===0){el.innerHTML='<div style="font-size:12px;color:#c0b0a0;padding:4px 0;">아직 루틴이 없어요 🌿</div>';return;}
@@ -427,7 +437,6 @@ body{
       }
       html+='</div></div>';
     }
-    // 카테고리 없는 루틴
     var uncatRoutines=routines.filter(function(r){return !categories.find(function(c){return c.id===r.catId;});});
     if(uncatRoutines.length>0){
       html+='<div class="cat-group"><div class="cat-group-header"><span class="cat-group-name">기타</span></div><div class="routine-list">';
@@ -438,7 +447,6 @@ body{
     bindGroupEvents();
   }
 
-  // 루틴 총 달성 점수 계산 (전체 날짜 기준)
   function calcScore(rid){
     var score=0;
     var keys=Object.keys(logs);
@@ -448,7 +456,6 @@ body{
     return score;
   }
 
-  // 식물 종류 7종 (루틴 추가 순서대로 순환)
   var PLANT_TYPES = ['default','cactus','monstera','flower','bamboo','pine','succu'];
 
   function plantTypeSVG(type, score, color, watered){
@@ -471,7 +478,6 @@ body{
     else if(type==='succu')    p = _succu(score);
     else                       p = _default(score);
 
-    // 화분 → 흙 → 식물 순서로 그리기 (식물이 흙 위에)
     return '<svg width="64" height="94" viewBox="0 0 64 94" xmlns="http://www.w3.org/2000/svg">'+potBody+soil+p+'</svg>';
   }
 
@@ -680,14 +686,11 @@ body{
       '<circle cx="44" cy="42" r="3.5" fill="'+pk+'" opacity="0.8"/>';
   }
 
-  // 구 plantSVG는 default 타입으로 위임
   function plantSVG(score, color){ return plantTypeSVG('default', score, color); }
 
-  // 물소리 (Web Audio API)
   function playWaterSound(){
     try {
       var ctx = new (window.AudioContext||window.webkitAudioContext)();
-      // 물방울 톡톡 소리 3방울
       [0, 0.08, 0.18].forEach(function(t){
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
@@ -703,13 +706,12 @@ body{
     } catch(e){}
   }
 
-  // 물방울 애니메이션
   function playWaterAnim(plantEl){
     var rect = plantEl.getBoundingClientRect();
     var scrollY = window.scrollY || window.pageYOffset;
     var scrollX = window.scrollX || window.pageXOffset;
     var cx = rect.left + scrollX + rect.width * 0.5;
-    var soilY = rect.top + scrollY + rect.height * (72/94); // 흙 위치
+    var soilY = rect.top + scrollY + rect.height * (72/94);
 
     for(var i=0; i<4; i++){
       (function(idx){
@@ -718,14 +720,13 @@ body{
           var drop = document.createElement('div');
           drop.className = 'water-drop';
           drop.style.left = (cx + ox - 3.5) + 'px';
-          drop.style.top  = (soilY - 60) + 'px'; // 흙에서 60px 위에서 시작
+          drop.style.top  = (soilY - 60) + 'px';
           document.body.appendChild(drop);
-          // 0.4s 후(dropFall 끝) 파문 생성
           setTimeout(function(){
             var ripple = document.createElement('div');
             ripple.className = 'water-ripple';
             ripple.style.left = (cx + ox - 8) + 'px';
-            ripple.style.top  = (soilY - 4) + 'px'; // 흙 위에 파문
+            ripple.style.top  = (soilY - 4) + 'px';
             document.body.appendChild(ripple);
             setTimeout(function(){ ripple.remove(); }, 400);
             drop.remove();
@@ -735,7 +736,6 @@ body{
     }
   }
 
-  // 선반 렌더
   function renderShelf(){
     var card = document.getElementById('shelf-card');
     var wrap = document.getElementById('shelf-wrap');
@@ -762,7 +762,6 @@ body{
         var score=calcScore(r.id);
         var typeIdx=routines.indexOf(r)%PLANT_TYPES.length;
         var ptype=PLANT_TYPES[typeIdx];
-        var stageTxt=score<7?'씨앗':score<21?'새싹':score<49?'성장중':score<100?'무럭무럭':'만개';
         var todayKey=selectedDate||toKey(new Date());
         var watered=!!(logs[todayKey]&&logs[todayKey][r.id]&&logs[todayKey][r.id].done);
         html+='<div class="shelf-plant" data-rid="'+r.id+'" title="'+(watered?'✅ 오늘 완료':'💧 눌러서 물주기')+' · '+escHtml(r.name)+'">';
@@ -782,7 +781,6 @@ body{
     }
     wrap.innerHTML = html;
 
-    // 화분 클릭 → 물주기
     var plants = wrap.querySelectorAll('.shelf-plant[data-rid]');
     for(var pi=0;pi<plants.length;pi++){
       plants[pi].addEventListener('click',(function(el,rid){
@@ -795,7 +793,6 @@ body{
             logs[dateKey][rid].done=true;
             playWaterSound();
             playWaterAnim(el);
-            // 물방울 애니 끝나고 (900ms) 축하 효과
             setTimeout(function(){
               playApplause();
               launchConfetti();
@@ -809,7 +806,6 @@ body{
       })(plants[pi], parseInt(plants[pi].getAttribute('data-rid'))));
     }
 
-    // 렌더 후 벽 높이를 판 하단 기준으로 맞추기
     setTimeout(function(){
       for(var ri=0;ri<rows.length;ri++){
         var mid  = document.getElementById('smid-'+ri);
@@ -819,11 +815,9 @@ body{
         if(!mid||!board||!wl||!wr) continue;
         var midRect   = mid.getBoundingClientRect();
         var boardRect = board.getBoundingClientRect();
-        // 판 하단(그림자 포함 +4px) 위치 - 40px 위
         var wallH = 40;
-        var boardBottom = boardRect.bottom + 4; // 그림자
+        var boardBottom = boardRect.bottom + 4;
         var wallBottom  = midRect.top + wallH;
-        // 벽 bottom이 boardBottom과 같도록 margin-top 조정
         var diff = boardBottom - wallBottom;
         wl.style.marginTop = Math.max(0, diff) + 'px';
         wr.style.marginTop = Math.max(0, diff) + 'px';
@@ -843,7 +837,7 @@ body{
     var score=calcScore(r.id);
     var stageTxt=score<7?'씨앗🌰':score<21?'새싹🌱':score<49?'성장중🌿':score<100?'무럭무럭🌳':'만개🌳✨';
     return '<div class="routine-item" draggable="true" data-rid="'+r.id+'" data-catid="'+r.catId+'">' +
-      '<div class="drag-handle" title="드래그로 순서/카테고리 변경">⠿</div>' +
+      '<div class="drag-handle" title="드래그로 순서 변경">⠿</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div class="routine-name-el" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:6px;">'+
           '<div class="routine-color-dot" style="background:'+r.color+';" data-rid="'+r.id+'" title="색상 변경"></div>'+
@@ -939,52 +933,158 @@ body{
       });
     });
 
-    // 드래그앤드롭
-    var dragSrcRid=null;
-    function clearDragState(){
-      document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('dragging','drag-over');});
-      dragSrcRid=null;
-    }
+    // ── 마우스 드래그앤드롭 ──
     document.querySelectorAll('.routine-item[draggable]').forEach(function(item){
-      item.addEventListener('dragstart',function(e){
-        dragSrcRid=parseInt(this.getAttribute('data-rid'));
-        this.classList.add('dragging');
-        e.dataTransfer.effectAllowed='move';
+      item.addEventListener('dragstart', function(e){
+        dragSrcRid = parseInt(this.getAttribute('data-rid'));
+        isDragging = true;
+        var self = this;
+        setTimeout(function(){ self.classList.add('dragging'); }, 0);
+        e.dataTransfer.effectAllowed = 'move';
       });
-      item.addEventListener('dragend',function(){
-        clearDragState();
+      item.addEventListener('dragend', function(){
+        this.classList.remove('dragging');
+        isDragging = false;
+        document.querySelectorAll('.routine-item.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+        dragSrcRid = null;
       });
-      item.addEventListener('dragover',function(e){
+      item.addEventListener('dragover', function(e){
         e.preventDefault();
-        e.dataTransfer.dropEffect='move';
-        document.querySelectorAll('.routine-item').forEach(function(i){i.classList.remove('drag-over');});
+        e.dataTransfer.dropEffect = 'move';
+        if(parseInt(this.getAttribute('data-rid')) === dragSrcRid) return;
+        document.querySelectorAll('.routine-item.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
         this.classList.add('drag-over');
       });
-      item.addEventListener('dragleave',function(){
+      item.addEventListener('dragleave', function(e){
+        if(this.contains(e.relatedTarget)) return;
         this.classList.remove('drag-over');
       });
-      item.addEventListener('drop',function(e){
-        e.preventDefault();
-        var targetRid=parseInt(this.getAttribute('data-rid'));
-        var targetCatId=parseInt(this.getAttribute('data-catid'));
-        var srcRid=dragSrcRid;
-        // renderGroups() 전에 dragging 클래스 제거 (DOM 교체 후 dragend가 누락될 수 있음)
-        clearDragState();
-        if(srcRid===null||srcRid===targetRid) return;
-        // 카테고리 변경 + 순서 변경
-        var srcIdx=routines.findIndex(function(r){return r.id===srcRid;});
-        var tgtIdx=routines.findIndex(function(r){return r.id===targetRid;});
-        if(srcIdx<0||tgtIdx<0) return;
-        var srcRoutine=routines.splice(srcIdx,1)[0];
-        srcRoutine.catId=targetCatId; // 카테고리도 변경
-        var newTgtIdx=routines.findIndex(function(r){return r.id===targetRid;});
-        routines.splice(newTgtIdx,0,srcRoutine);
+      item.addEventListener('drop', function(e){
+        e.preventDefault(); e.stopPropagation();
+        var targetRid = parseInt(this.getAttribute('data-rid'));
+        var targetCatId = parseInt(this.getAttribute('data-catid'));
+        var srcRid = dragSrcRid;
+        this.classList.remove('drag-over');
+        if(srcRid === null || srcRid === targetRid) return;
+        var srcIdx = routines.findIndex(function(r){ return r.id === srcRid; });
+        if(srcIdx < 0) return;
+        var srcRoutine = routines.splice(srcIdx, 1)[0];
+        srcRoutine.catId = targetCatId;
+        var newTgtIdx = routines.findIndex(function(r){ return r.id === targetRid; });
+        routines.splice(newTgtIdx, 0, srcRoutine);
         renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+      });
+    });
+
+    // ── 터치 드래그앤드롭 ──
+    var touchDragRid = null;
+    var touchClone = null;
+    var touchOffsetX = 0, touchOffsetY = 0;
+    var touchLastTarget = null;
+
+    document.querySelectorAll('.routine-item').forEach(function(item){
+      item.addEventListener('touchstart', function(e){
+        // 드래그 핸들 또는 아이템 자체에서만 시작
+        var handle = e.target.closest('.drag-handle');
+        if(!handle && e.target.closest('.item-btn, .routine-color-dot, .memo-input, .check-box, input')) return;
+
+        var touch = e.touches[0];
+        touchDragRid = parseInt(this.getAttribute('data-rid'));
+
+        // 클론 생성
+        var rect = this.getBoundingClientRect();
+        touchOffsetX = touch.clientX - rect.left;
+        touchOffsetY = touch.clientY - rect.top;
+
+        touchClone = this.cloneNode(true);
+        touchClone.style.cssText = [
+          'position:fixed',
+          'left:'+(touch.clientX - touchOffsetX)+'px',
+          'top:'+(touch.clientY - touchOffsetY)+'px',
+          'width:'+rect.width+'px',
+          'opacity:0.85',
+          'pointer-events:none',
+          'z-index:9999',
+          'box-shadow:0 8px 24px rgba(0,0,0,0.18)',
+          'border-radius:6px',
+          'transform:scale(1.03)',
+          'transition:transform 0.1s',
+          'background:var(--paper)',
+          'border:1.5px solid var(--tan)',
+        ].join(';');
+        document.body.appendChild(touchClone);
+
+        this.classList.add('dragging');
+        e.preventDefault();
+      }, {passive: false});
+
+      item.addEventListener('touchmove', function(e){
+        if(touchDragRid === null) return;
+        e.preventDefault();
+        var touch = e.touches[0];
+
+        // 클론 이동
+        if(touchClone){
+          touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+          touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
+        }
+
+        // 현재 손가락 아래 아이템 찾기
+        touchClone && (touchClone.style.display = 'none');
+        var elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchClone && (touchClone.style.display = '');
+
+        var targetItem = elBelow && elBelow.closest('.routine-item');
+
+        if(touchLastTarget && touchLastTarget !== targetItem){
+          touchLastTarget.classList.remove('drag-over');
+        }
+        if(targetItem && parseInt(targetItem.getAttribute('data-rid')) !== touchDragRid){
+          targetItem.classList.add('drag-over');
+          touchLastTarget = targetItem;
+        } else {
+          touchLastTarget = null;
+        }
+      }, {passive: false});
+
+      item.addEventListener('touchend', function(e){
+        if(touchDragRid === null) return;
+
+        // 클론 제거
+        if(touchClone){ touchClone.remove(); touchClone = null; }
+
+        // dragging 클래스 제거
+        document.querySelectorAll('.routine-item.dragging').forEach(function(el){ el.classList.remove('dragging'); });
+        if(touchLastTarget){ touchLastTarget.classList.remove('drag-over'); }
+
+        var srcRid = touchDragRid;
+        touchDragRid = null;
+
+        if(!touchLastTarget) return;
+        var targetRid = parseInt(touchLastTarget.getAttribute('data-rid'));
+        var targetCatId = parseInt(touchLastTarget.getAttribute('data-catid'));
+        touchLastTarget = null;
+
+        if(srcRid === targetRid) return;
+        var srcIdx = routines.findIndex(function(r){ return r.id === srcRid; });
+        if(srcIdx < 0) return;
+        var srcRoutine = routines.splice(srcIdx, 1)[0];
+        srcRoutine.catId = targetCatId;
+        var newTgtIdx = routines.findIndex(function(r){ return r.id === targetRid; });
+        routines.splice(newTgtIdx, 0, srcRoutine);
+        renderGroups();renderCal();renderDetail();renderShelf();autoSave();
+      });
+
+      item.addEventListener('touchcancel', function(){
+        if(touchClone){ touchClone.remove(); touchClone = null; }
+        document.querySelectorAll('.routine-item.dragging, .routine-item.drag-over').forEach(function(el){
+          el.classList.remove('dragging','drag-over');
+        });
+        touchDragRid = null; touchLastTarget = null;
       });
     });
   }
 
-  // 루틴 추가
   document.getElementById('add-routine-btn').addEventListener('click',addRoutine);
   document.getElementById('routine-input').addEventListener('keydown',function(e){if(e.key==='Enter')addRoutine();});
   function addRoutine(){
@@ -995,14 +1095,12 @@ body{
     inp.value='';renderGroups();renderCal();renderDetail();renderShelf();autoSave();
   }
 
-  // streak
   function calcStreak(rid){
     var streak=0;var d=new Date();
     while(true){var key=toKey(d);var dl=logs[key];if(dl&&dl[rid]&&dl[rid].done){streak++;d.setDate(d.getDate()-1);}else break;}
     return streak;
   }
 
-  // 달력
   function renderCal(){
     document.getElementById('cal-title').textContent=viewYear+'년 '+(viewMonth+1)+'월';
     var grid=document.getElementById('cal-grid');
@@ -1030,7 +1128,6 @@ body{
     });
   }
 
-  // 상세
   function renderDetail(){
     var card=document.getElementById('detail-card');
     var mainBtns=document.getElementById('main-btns');
@@ -1041,7 +1138,6 @@ body{
     document.getElementById('detail-date').textContent=(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+wd[d.getDay()]+') 루틴 체크';
     if(!logs[selectedDate]) logs[selectedDate]={};
     var html='';
-    // 카테고리별로 묶어서 표시
     for(var ci=0;ci<categories.length;ci++){
       var cat=categories[ci];
       var catRoutines=routines.filter(function(r){return r.catId===cat.id;});
@@ -1065,7 +1161,7 @@ body{
       el.addEventListener('click',function(){
         var rid=parseInt(this.getAttribute('data-rid'));
         logs[selectedDate][rid].done=!logs[selectedDate][rid].done;
-        renderRoutineListStreaks();renderCal();renderDetail();renderShelf();autoSave();
+        renderGroups();renderCal();renderDetail();renderShelf();autoSave();
       });
     });
     document.querySelectorAll('.memo-input[data-rid]').forEach(function(el){
@@ -1135,7 +1231,7 @@ body{
 
   autoLoad();
   renderColorPick();renderCatSelectRow();renderGroups();renderCal();renderDetail();
-  setTimeout(renderShelf, 50); // 레이아웃 확정 후 선반 너비 계산
+  setTimeout(renderShelf, 50);
   window.addEventListener('resize', renderShelf);
 })();
 
@@ -1145,11 +1241,9 @@ if('serviceWorker' in navigator){
   });
 }
 
-// ── 축하 효과 ──
 function playApplause() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // 박수 소리: 노이즈 버스트 여러 개
     for(var i = 0; i < 8; i++) {
       (function(delay) {
         setTimeout(function() {
@@ -1162,7 +1256,6 @@ function playApplause() {
           var gain = ctx.createGain();
           gain.gain.setValueAtTime(0.4, ctx.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-          // 필터로 박수 느낌
           var filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
           filter.frequency.value = 1200 + Math.random()*800;
@@ -1188,7 +1281,6 @@ function launchConfetti() {
   var pieces = [];
   var count = 120;
 
-  // 양쪽에서 뿌리기
   for(var i = 0; i < count; i++) {
     var fromLeft = i < count/2;
     pieces.push({
@@ -1244,7 +1336,6 @@ function launchConfetti() {
   requestAnimationFrame(draw);
 }
 
-// 축하 문구
 var celebrationMsg = localStorage.getItem('celebration-msg') || '와👏👏 성공🩷 축하해요';
 function toggleSettings() {
   var panel = document.getElementById('settings-panel');
@@ -1274,8 +1365,6 @@ function showCelebration() {
   setTimeout(function(){ msg.classList.remove('show'); }, 2500);
   setTimeout(function(){ msg.remove(); }, 3000);
 }
-
-
 </script>
 </body>
 </html>
