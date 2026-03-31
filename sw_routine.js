@@ -1,4 +1,4 @@
-const CACHE = 'routine-v3';
+const CACHE = 'routine-v4';
 const FILES = [
   './routine.html',
   './routine_icon.png',
