@@ -208,6 +208,52 @@ body{
 
 .inline-palette{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;padding:4px 8px;background:rgba(200,168,130,0.1);border-radius:6px;}
 
+/* ── 씨앗 목록 (해보고 싶은 습관) ── */
+.seed-section{margin-top:18px;border-top:1.5px dashed var(--line);padding-top:12px;}
+.seed-toggle{
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  background:none;border:none;padding:4px 0;width:100%;text-align:left;
+}
+.seed-toggle-icon{
+  font-size:11px;color:var(--brown-light);transition:transform .2s;display:inline-block;
+}
+.seed-toggle-icon.open{transform:rotate(90deg);}
+.seed-toggle-title{font-family:'Nanum Pen Script',cursive;font-size:20px;color:var(--brown);}
+.seed-toggle-count{font-size:11px;color:var(--brown-light);margin-left:2px;}
+.seed-body{overflow:hidden;transition:max-height .3s ease, opacity .2s;max-height:0;opacity:0;}
+.seed-body.open{max-height:2000px;opacity:1;}
+.seed-add-row{display:flex;gap:8px;align-items:center;margin:10px 0 8px;}
+.seed-input{
+  flex:1;background:transparent;border:none;border-bottom:1.5px solid var(--tan);
+  padding:4px 2px;font-family:'Nanum Pen Script',cursive;font-size:17px;color:var(--brown);outline:none;
+}
+.seed-input::placeholder{color:#c0b0a0;}
+.seed-list{display:flex;flex-direction:column;gap:6px;}
+.seed-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 10px;border-radius:8px;
+  background:rgba(200,168,130,0.06);border:1px dashed rgba(200,168,130,0.35);
+  transition:all .15s;
+}
+.seed-item:hover{background:rgba(200,168,130,0.12);border-color:var(--tan);}
+.seed-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.seed-content{flex:1;min-width:0;}
+.seed-name{font-size:13px;color:var(--brown);font-weight:400;}
+.seed-memo{
+  width:100%;margin-top:4px;background:transparent;border:none;border-bottom:1px dashed rgba(200,168,130,0.3);
+  font-size:11px;color:var(--brown-light);outline:none;padding:2px 0;
+}
+.seed-memo::placeholder{color:#d0c0a8;}
+.seed-actions{display:flex;gap:2px;flex-shrink:0;align-items:flex-start;}
+.seed-btn{
+  background:none;border:none;cursor:pointer;font-size:11px;padding:2px 4px;
+  color:var(--brown-light);border-radius:4px;transition:all .15s;
+}
+.seed-btn:hover{background:rgba(200,168,130,0.15);color:var(--brown);}
+.seed-btn.promote{font-size:10px;padding:2px 8px;border:1px solid var(--tan);border-radius:10px;white-space:nowrap;}
+.seed-btn.promote:hover{background:var(--brown);color:var(--paper);border-color:var(--brown);}
+.seed-empty{font-size:12px;color:#c0b0a0;padding:8px 0;text-align:center;}
+
 .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cal-title{font-family:'Nanum Pen Script',cursive;font-size:22px;color:var(--brown);}
 .nav-btn{background:none;border:1px solid var(--tan);border-radius:4px;padding:3px 10px;font-size:13px;color:var(--brown-light);cursor:pointer;}
@@ -317,6 +363,22 @@ body{
       <div class="color-pick" id="color-pick"></div>
     </div>
     <div id="routine-groups"></div>
+
+    <!-- 씨앗 목록: 해보고 싶은 습관 -->
+    <div class="seed-section" id="seed-section">
+      <button class="seed-toggle" id="seed-toggle" type="button">
+        <span class="seed-toggle-icon" id="seed-toggle-icon">▶</span>
+        <span class="seed-toggle-title">🌱 해보고 싶은 습관</span>
+        <span class="seed-toggle-count" id="seed-count"></span>
+      </button>
+      <div class="seed-body" id="seed-body">
+        <div class="seed-add-row">
+          <input class="seed-input" id="seed-input" type="text" placeholder="언젠가 해보고 싶은 습관..." />
+          <button class="add-btn" id="add-seed-btn">+ 담기</button>
+        </div>
+        <div class="seed-list" id="seed-list"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -344,6 +406,7 @@ body{
               '#d4607a','#d08060','#e8904a','#50a898'];
   var categories=[{id:1,name:'아침 루틴'},{id:2,name:'저녁 루틴'}];
   var routines=[];
+  var seeds=[];
   var logs={};
   var selectedColor=0;
   var selectedCatId=1;
@@ -1178,7 +1241,7 @@ body{
   document.getElementById('next-btn').addEventListener('click',function(){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}renderCal();});
 
   function autoSave(){
-    try{ localStorage.setItem('routine_data',JSON.stringify({categories:categories,routines:routines,logs:logs,idCounter:idCounter})); }catch(e){}
+    try{ localStorage.setItem('routine_data',JSON.stringify({categories:categories,routines:routines,seeds:seeds,logs:logs,idCounter:idCounter})); }catch(e){}
   }
   function autoLoad(){
     try{
@@ -1187,14 +1250,120 @@ body{
       var data=JSON.parse(raw);
       if(data.categories) categories=data.categories;
       if(data.routines) routines=data.routines;
+      if(data.seeds) seeds=data.seeds;
       if(data.logs) logs=data.logs;
       if(data.idCounter) idCounter=data.idCounter;
       if(categories.length>0) selectedCatId=categories[0].id;
     }catch(e){}
   }
 
+  // ── 씨앗 목록 (해보고 싶은 습관) ──
+  var seedOpen = false;
+
+  function renderSeeds(){
+    var countEl = document.getElementById('seed-count');
+    countEl.textContent = seeds.length > 0 ? '(' + seeds.length + ')' : '';
+
+    var list = document.getElementById('seed-list');
+    if(seeds.length === 0){
+      list.innerHTML = '<div class="seed-empty">아직 담아둔 씨앗이 없어요 🌱</div>';
+      return;
+    }
+    var html = '';
+    for(var i = 0; i < seeds.length; i++){
+      var s = seeds[i];
+      html += '<div class="seed-item" data-sid="' + s.id + '">' +
+        '<div class="seed-icon">🌰</div>' +
+        '<div class="seed-content">' +
+          '<div class="seed-name">' + escHtml(s.name) + '</div>' +
+          '<input class="seed-memo" type="text" placeholder="메모 (동기, 트리거, 아이디어...)" value="' + escHtml(s.memo || '') + '" data-sid="' + s.id + '" />' +
+        '</div>' +
+        '<div class="seed-actions">' +
+          '<button class="seed-btn promote" data-sid="' + s.id + '" title="루틴으로 시작하기">→ 시작</button>' +
+          '<button class="seed-btn" data-sid="' + s.id + '" data-action="del" title="삭제">✕</button>' +
+        '</div>' +
+      '</div>';
+    }
+    list.innerHTML = html;
+
+    // 메모 입력
+    list.querySelectorAll('.seed-memo').forEach(function(el){
+      el.addEventListener('input', function(){
+        var sid = parseInt(this.getAttribute('data-sid'));
+        var seed = seeds.find(function(s){ return s.id === sid; });
+        if(seed) seed.memo = this.value;
+        autoSave();
+      });
+    });
+
+    // 삭제
+    list.querySelectorAll('.seed-btn[data-action="del"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var sid = parseInt(this.getAttribute('data-sid'));
+        seeds = seeds.filter(function(s){ return s.id !== sid; });
+        renderSeeds(); autoSave();
+      });
+    });
+
+    // 승격: 루틴으로 시작하기
+    list.querySelectorAll('.seed-btn.promote').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var sid = parseInt(this.getAttribute('data-sid'));
+        var seed = seeds.find(function(s){ return s.id === sid; });
+        if(!seed) return;
+
+        // 카테고리 선택 (현재 선택된 카테고리 사용)
+        var catId = selectedCatId || (categories.length > 0 ? categories[0].id : null);
+        if(!catId){
+          alert('카테고리를 먼저 만들어주세요!');
+          return;
+        }
+
+        // 루틴으로 추가
+        routines.push({id: idCounter++, name: seed.name, color: COLORS[selectedColor], catId: catId});
+        // 씨앗에서 제거
+        seeds = seeds.filter(function(s){ return s.id !== sid; });
+
+        renderSeeds(); renderGroups(); renderCal(); renderDetail(); renderShelf(); autoSave();
+
+        // 피드백
+        var item = document.querySelector('.routine-item[data-rid="' + (idCounter - 1) + '"]');
+        if(item){
+          item.style.background = 'rgba(106,170,64,0.15)';
+          setTimeout(function(){ item.style.background = ''; }, 1200);
+        }
+      });
+    });
+  }
+
+  // 씨앗 토글
+  document.getElementById('seed-toggle').addEventListener('click', function(){
+    seedOpen = !seedOpen;
+    var body = document.getElementById('seed-body');
+    var icon = document.getElementById('seed-toggle-icon');
+    if(seedOpen){
+      body.classList.add('open');
+      icon.classList.add('open');
+    } else {
+      body.classList.remove('open');
+      icon.classList.remove('open');
+    }
+  });
+
+  // 씨앗 추가
+  document.getElementById('add-seed-btn').addEventListener('click', addSeed);
+  document.getElementById('seed-input').addEventListener('keydown', function(e){ if(e.key === 'Enter') addSeed(); });
+  function addSeed(){
+    var inp = document.getElementById('seed-input');
+    var text = inp.value.trim();
+    if(!text) return;
+    seeds.push({id: idCounter++, name: text, memo: ''});
+    inp.value = '';
+    renderSeeds(); autoSave();
+  }
+
   function saveData(){
-    var data=JSON.stringify({categories:categories,routines:routines,logs:logs,idCounter:idCounter},null,2);
+    var data=JSON.stringify({categories:categories,routines:routines,seeds:seeds,logs:logs,idCounter:idCounter},null,2);
     var blob=new Blob([data],{type:'application/json'});
     var now2=new Date();
     var ts=now2.getFullYear()+pad(now2.getMonth()+1)+pad(now2.getDate())+'_'+pad(now2.getHours())+pad(now2.getMinutes());
@@ -1210,10 +1379,11 @@ body{
           var data=JSON.parse(ev.target.result);
           if(data.categories) categories=data.categories;
           if(data.routines) routines=data.routines;
+          if(data.seeds) seeds=data.seeds;
           if(data.logs) logs=data.logs;
           if(data.idCounter) idCounter=data.idCounter;
           if(categories.length>0) selectedCatId=categories[0].id;
-          renderCatSelectRow();renderGroups();renderCal();renderDetail();
+          renderCatSelectRow();renderGroups();renderCal();renderDetail();renderSeeds();
           alert('불러오기 완료!');
         }catch(err){alert('파일을 읽을 수 없어요.');}
       };
@@ -1230,7 +1400,7 @@ body{
   function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   autoLoad();
-  renderColorPick();renderCatSelectRow();renderGroups();renderCal();renderDetail();
+  renderColorPick();renderCatSelectRow();renderGroups();renderCal();renderDetail();renderSeeds();
   setTimeout(renderShelf, 50);
   window.addEventListener('resize', renderShelf);
 })();
